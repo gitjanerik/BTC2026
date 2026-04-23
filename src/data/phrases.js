@@ -1,0 +1,18 @@
+export const phrases = [
+  { no: 'Hei',                        ro: 'Salut',              phon: 'sa-lut' },
+  { no: 'God dag',                    ro: 'Bună ziua',          phon: 'boo-nuh ZEE-wah' },
+  { no: 'Takk',                       ro: 'Mulțumesc',          phon: 'mul-tsu-MESK' },
+  { no: 'Vær så god / ingen årsak',   ro: 'Cu plăcere',         phon: 'ku pluh-CHE-reh' },
+  { no: 'Ja / Nei',                   ro: 'Da / Nu',            phon: 'da / nu' },
+  { no: 'Unnskyld',                   ro: 'Scuze',              phon: 'SKOO-zeh' },
+  { no: 'Skål!',                      ro: 'Noroc!',             phon: 'no-ROK' },
+  { no: 'Fem øl, takk',               ro: 'Cinci beri, vă rog', phon: 'CHEEN-chee BE-ree, vuh ROG' },
+  { no: 'Hva koster det?',            ro: 'Cât costă?',         phon: 'kuht KOS-tuh' },
+  { no: 'Altfor dyrt, Sir!',          ro: 'Prea scump, domnule!', phon: 'pre-AH SKUMP, DOM-nu-leh' },
+  { no: 'Regningen, takk',            ro: 'Nota, vă rog',       phon: 'NO-tah, vuh ROG' },
+  { no: 'Hvor er toalettet?',         ro: 'Unde e toaleta?',    phon: 'UN-deh yeh to-ah-LE-tah' },
+  { no: 'Snakker du engelsk?',        ro: 'Vorbiți engleza?',   phon: 'vor-BEETS en-GLE-zah' },
+  { no: 'Smakfullt!',                 ro: 'Delicios!',          phon: 'de-lee-CHOS' },
+  { no: 'God natt',                   ro: 'Noapte bună',        phon: 'NO-ap-teh BOO-nuh' },
+  { no: 'Farvel',                     ro: 'La revedere',        phon: 'lah reh-veh-DEH-reh' },
+];

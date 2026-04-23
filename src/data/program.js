@@ -1,0 +1,121 @@
+export const program = [
+  {
+    day: 'friday',
+    date: '2026-04-24',
+    label: 'Fredag — Ankomst',
+    stops: [
+      {
+        id: 'arrival',
+        time: 'Kveld',
+        title: 'Ankomst & middag hos Tor Martin',
+        desc: 'Fra flyplassen: nedre plan → Carrefour til venstre → ut og høyre → buss 100 (sveip kort, ~7 RON) → av ved Piața Victoriei. Tor Martin møter. Tunfisk og spinat hjemme.',
+        location: { lat: 44.4659, lng: 26.0889, name: 'Str. Emanoil Porumbaru 82-84' },
+      },
+    ],
+  },
+  {
+    day: 'saturday',
+    date: '2026-04-25',
+    label: 'Lørdag — Old Town + Therme',
+    stops: [
+      {
+        id: 'lipscani',
+        time: '10:00–12:30',
+        title: 'Lipscani & Stavropoleos',
+        desc: 'M2 fra Aviatorilor → Piața Unirii. Utforsk Old Town.',
+        location: { lat: 44.4309, lng: 26.1025, name: 'Stavropoleos Monastery' },
+      },
+      {
+        id: 'caru',
+        time: '12:30–14:00',
+        title: "Lunsj: Caru' cu Bere",
+        desc: 'BOOK PÅ FORHÅND.',
+        location: { lat: 44.4318, lng: 26.1013, name: "Caru' cu Bere" },
+      },
+      {
+        id: 'therme',
+        time: '15:00–20:00+',
+        title: 'Therme Bucharest',
+        desc: 'M2 Unirii → Pipera, deretter Uber/Bolt. Minst 4,5–5 timer. Møt den polske litteraturprofessoren (kjøp én drink hver fra Galaxy pool bar).',
+        location: { lat: 44.6056, lng: 26.0753, name: 'Therme Bucharest' },
+      },
+      {
+        id: 'sat-evening',
+        time: 'Etter 20:30',
+        title: 'Tilbake til Aviatorilor',
+        desc: 'Snacks hjemme eller drinker i byen — fleksibelt.',
+        location: null,
+      },
+    ],
+  },
+  {
+    day: 'sunday',
+    date: '2026-04-26',
+    label: 'Søndag — Historie + konsert',
+    stops: [
+      {
+        id: 'ceausescu',
+        time: '10:00–11:30',
+        title: 'Casa Ceaușescu',
+        desc: 'Gåavstand fra basen.',
+        location: { lat: 44.4759, lng: 26.0869, name: 'Primăverii Palace' },
+      },
+      {
+        id: 'parliament',
+        time: '12:00–13:30',
+        title: 'Palace of the Parliament',
+        desc: 'M2 til Piața Unirii. FORHÅNDSBOOK guidet tur.',
+        location: { lat: 44.4275, lng: 26.0873, name: 'Palace of the Parliament' },
+      },
+      {
+        id: 'casa-oamenilor',
+        time: '14:00–16:00',
+        title: 'Lunsj: Casa Oamenilor de Știință ⭐',
+        desc: 'Be om Sala Zodiac. Treg, elegant, gammelverden-følelse.',
+        location: { lat: 44.4467, lng: 26.0917, name: 'Casa Oamenilor de Știință' },
+      },
+      {
+        id: 'cocktails',
+        time: '16:30–18:30',
+        title: 'Cocktails: Casa Mița Biciclista',
+        desc: 'Belle Époque-villa på Calea Victoriei, golden hour.',
+        location: { lat: 44.4430, lng: 26.0958, name: 'Casa Mița Biciclista' },
+      },
+      {
+        id: 'athenaeum',
+        time: '19:00–21:00',
+        title: 'Konsert: Romanian Athenaeum',
+        desc: 'Kammermusikk i marmorsalen. Billetter bestilt for 22/4 — bekreft dato.',
+        location: { lat: 44.4413, lng: 26.0975, name: 'Romanian Athenaeum' },
+      },
+      {
+        id: 'sun-dinner',
+        time: 'Natt',
+        title: 'Middag hjemme hos Tor Martin',
+        desc: '',
+        location: { lat: 44.4659, lng: 26.0889, name: 'Str. Emanoil Porumbaru 82-84' },
+      },
+    ],
+  },
+  {
+    day: 'monday',
+    date: '2026-04-27',
+    label: 'Mandag — Landsbymuseum + avskjedslunsj',
+    stops: [
+      {
+        id: 'village-museum',
+        time: '10:00–12:00',
+        title: 'Dimitrie Gusti Landsbymuseum',
+        desc: 'Kort spasertur. Eventuelt innom King Mihai I Park.',
+        location: { lat: 44.4691, lng: 26.0783, name: 'Village Museum' },
+      },
+      {
+        id: 'casa-doina',
+        time: '12:15–13:45',
+        title: 'Lunsj: Casa Doina ⭐',
+        desc: 'Historisk hus, raffinert rumensk kjøkken, nær basen.',
+        location: { lat: 44.4644, lng: 26.0872, name: 'Casa Doina' },
+      },
+    ],
+  },
+];
