@@ -3,13 +3,20 @@ import { ref, computed, nextTick, watch, onUnmounted } from 'vue';
 import { useChat } from '../composables/useChat.js';
 import { useAuth } from '../composables/useAuth.js';
 
-const { messages, ready, error, send, typingOthers, notifyTyping, stopTyping } = useChat();
+const {
+  messages, ready, error, send,
+  typingOthers, notifyTyping, stopTyping,
+  reactions, toggleReaction,
+} = useChat();
 const { current } = useAuth();
 
 const draft = ref('');
 const list = ref(null);
 const sending = ref(false);
 const sendError = ref('');
+const pickerFor = ref(null); // msgId currently showing picker
+
+const EMOJIS = ['👍', '❤️', '😂', '🔥', '🎉', '😮'];
 
 let idleTimer = null;
 
@@ -51,6 +58,29 @@ const typingLabel = computed(() => {
   return `${names.slice(0, -1).join(', ')} og ${names[names.length - 1]} skriver`;
 });
 
+function grouped(msgId) {
+  const by = reactions.value[msgId];
+  if (!by) return [];
+  const agg = {};
+  Object.entries(by).forEach(([uid, r]) => {
+    if (!agg[r.emoji]) agg[r.emoji] = { emoji: r.emoji, count: 0, names: [], uids: [] };
+    agg[r.emoji].count += 1;
+    agg[r.emoji].names.push(r.name);
+    agg[r.emoji].uids.push(uid);
+  });
+  return Object.values(agg).sort((a, b) => b.count - a.count);
+}
+
+function myEmoji(msgId) {
+  const u = current.value?.uid;
+  return u ? reactions.value[msgId]?.[u]?.emoji : null;
+}
+
+async function pick(msgId, emoji) {
+  pickerFor.value = null;
+  try { await toggleReaction(msgId, emoji); } catch (e) { sendError.value = e.message; }
+}
+
 watch(messages, async () => {
   await nextTick();
   if (list.value) list.value.scrollTop = list.value.scrollHeight;
@@ -73,7 +103,7 @@ onUnmounted(() => { if (idleTimer) clearTimeout(idleTimer); });
       <h2 class="stencil text-2xl text-center mt-1">Chat</h2>
     </div>
 
-    <div ref="list" class="flex-1 overflow-y-auto p-3 space-y-2">
+    <div ref="list" class="flex-1 overflow-y-auto p-3 space-y-3">
       <p v-if="!ready" class="text-center text-sm opacity-60">Kobler til…</p>
       <p v-if="error" class="text-sovred text-sm text-center">{{ error }}</p>
       <p v-if="ready && messages.length === 0 && !error" class="text-center text-sm opacity-60">
@@ -83,15 +113,56 @@ onUnmounted(() => { if (idleTimer) clearTimeout(idleTimer); });
       <div
         v-for="m in messages"
         :key="m.id"
-        class="flex"
-        :class="m.senderId === current?.uid ? 'justify-end' : 'justify-start'"
+        class="flex flex-col"
+        :class="m.senderId === current?.uid ? 'items-end' : 'items-start'"
       >
-        <div
-          class="stamp-sm max-w-[80%] px-3 py-2"
-          :class="m.senderId === current?.uid ? 'bg-orange text-paper' : 'bg-paper'"
-        >
-          <p class="text-[10px] stencil opacity-80">{{ m.senderName }} · {{ fmtTime(m.createdAt) }}</p>
-          <p class="text-sm whitespace-pre-wrap leading-snug">{{ m.text }}</p>
+        <div class="relative max-w-[85%] group">
+          <div
+            class="stamp-sm px-3 py-2"
+            :class="m.senderId === current?.uid ? 'bg-orange text-paper' : 'bg-paper'"
+            @dblclick="pickerFor = m.id"
+          >
+            <p class="text-[10px] stencil opacity-80">{{ m.senderName }} · {{ fmtTime(m.createdAt) }}</p>
+            <p class="text-sm whitespace-pre-wrap leading-snug">{{ m.text }}</p>
+          </div>
+          <button
+            type="button"
+            class="absolute -top-2 -right-2 w-7 h-7 stamp-sm bg-paper flex items-center justify-center text-sm"
+            :aria-label="'Reager på melding'"
+            @click="pickerFor = pickerFor === m.id ? null : m.id"
+          >☺</button>
+
+          <div
+            v-if="pickerFor === m.id"
+            class="absolute z-10 mt-1 left-0 right-0 flex justify-center"
+          >
+            <div class="stamp bg-paper px-2 py-1 flex gap-1">
+              <button
+                v-for="e in EMOJIS"
+                :key="e"
+                type="button"
+                class="w-9 h-9 text-xl flex items-center justify-center rounded hover:bg-deep active:scale-95"
+                :class="myEmoji(m.id) === e ? 'bg-mustard' : ''"
+                @click="pick(m.id, e)"
+              >{{ e }}</button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="grouped(m.id).length" class="flex gap-1 flex-wrap mt-1 max-w-[85%]"
+             :class="m.senderId === current?.uid ? 'justify-end' : 'justify-start'">
+          <button
+            v-for="r in grouped(m.id)"
+            :key="r.emoji"
+            type="button"
+            class="stamp-sm px-1.5 py-0.5 text-xs flex items-center gap-1"
+            :class="myEmoji(m.id) === r.emoji ? 'bg-mustard' : 'bg-paper'"
+            :title="r.names.join(', ')"
+            @click="pick(m.id, r.emoji)"
+          >
+            <span>{{ r.emoji }}</span>
+            <span class="font-display">{{ r.count }}</span>
+          </button>
         </div>
       </div>
 
@@ -120,6 +191,12 @@ onUnmounted(() => { if (idleTimer) clearTimeout(idleTimer); });
         <button class="btn-primary" :disabled="sending || !ready || !draft.trim()">Send</button>
       </div>
     </form>
+
+    <div
+      v-if="pickerFor"
+      class="fixed inset-0 z-0"
+      @click="pickerFor = null"
+    />
   </div>
 </template>
 

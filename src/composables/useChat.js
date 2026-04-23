@@ -1,6 +1,6 @@
 import { ref, computed, onUnmounted } from 'vue';
 import {
-  collection, query, orderBy, limit, onSnapshot, addDoc, serverTimestamp,
+  collection, collectionGroup, query, orderBy, limit, onSnapshot, addDoc, serverTimestamp,
   doc, setDoc, deleteDoc,
 } from 'firebase/firestore';
 import { db, hasFirebaseConfig } from '../firebase.js';
@@ -11,7 +11,8 @@ const TYPING_THROTTLE_MS = 2000;
 
 export function useChat() {
   const messages = ref([]);
-  const typing = ref([]); // [{ uid, name, at }]
+  const typing = ref([]);
+  const reactions = ref({}); // { msgId: { uid: { emoji, name } } }
   const ready = ref(false);
   const error = ref('');
   const now = ref(Date.now());
@@ -35,6 +36,17 @@ export function useChat() {
         const at = data.at?.toMillis ? data.at.toMillis() : 0;
         return { uid: d.id, name: data.name, at };
       });
+    }));
+
+    unsubs.push(onSnapshot(collectionGroup(db, 'reactions'), (snap) => {
+      const byMsg = {};
+      snap.docs.forEach((d) => {
+        const msgId = d.ref.parent.parent?.id;
+        if (!msgId) return;
+        if (!byMsg[msgId]) byMsg[msgId] = {};
+        byMsg[msgId][d.id] = d.data();
+      });
+      reactions.value = byMsg;
     }));
 
     tickTimer = setInterval(() => { now.value = Date.now(); }, 1000);
@@ -61,6 +73,20 @@ export function useChat() {
       createdAt: serverTimestamp(),
     });
     stopTyping();
+  }
+
+  async function toggleReaction(msgId, emoji) {
+    if (!hasFirebaseConfig || !db) return;
+    const { current } = useAuth();
+    const u = current.value;
+    if (!u?.uid) return;
+    const ref = doc(db, 'chat', msgId, 'reactions', u.uid);
+    const existing = reactions.value[msgId]?.[u.uid];
+    if (existing?.emoji === emoji) {
+      await deleteDoc(ref);
+    } else {
+      await setDoc(ref, { emoji, name: u.name, at: serverTimestamp() });
+    }
   }
 
   async function notifyTyping() {
@@ -91,5 +117,9 @@ export function useChat() {
     stopTyping();
   });
 
-  return { messages, ready, error, send, typingOthers, notifyTyping, stopTyping };
+  return {
+    messages, ready, error, send,
+    typingOthers, notifyTyping, stopTyping,
+    reactions, toggleReaction,
+  };
 }
