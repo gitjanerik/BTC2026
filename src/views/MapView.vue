@@ -1,37 +1,16 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { program } from '../data/program.js';
+import { guideHome } from '../data/guide.js';
+import { loadGoogleMaps, retroMapStyles, homeMarkerIcon } from '../composables/useGoogleMaps.js';
 
 const el = ref(null);
 const status = ref('idle');
 const errorMsg = ref('');
 
-const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-
 const stops = program.flatMap((d) =>
   d.stops.filter((s) => s.location).map((s) => ({ ...s, day: d.label }))
 );
-
-function loadScript() {
-  return new Promise((resolve, reject) => {
-    if (window.google && window.google.maps) return resolve();
-    if (!key) return reject(new Error('VITE_GOOGLE_MAPS_API_KEY mangler'));
-    const existing = document.querySelector('script[data-gmaps]');
-    if (existing) {
-      existing.addEventListener('load', () => resolve());
-      existing.addEventListener('error', () => reject(new Error('Kunne ikke laste Google Maps')));
-      return;
-    }
-    const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly`;
-    s.async = true;
-    s.defer = true;
-    s.dataset.gmaps = '1';
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error('Kunne ikke laste Google Maps'));
-    document.head.appendChild(s);
-  });
-}
 
 let map;
 let markers = [];
@@ -40,25 +19,36 @@ let info;
 async function init() {
   status.value = 'loading';
   try {
-    await loadScript();
-    const g = window.google.maps;
+    const g = (await loadGoogleMaps()).maps;
     map = new g.Map(el.value, {
-      center: { lat: 44.46, lng: 26.09 },
+      center: guideHome.location,
       zoom: 12,
-      disableDefaultUI: false,
       mapTypeControl: false,
       streetViewControl: true,
-      styles: [
-        { elementType: 'geometry', stylers: [{ color: '#efe4cc' }] },
-        { elementType: 'labels.text.fill', stylers: [{ color: '#2a1810' }] },
-        { elementType: 'labels.text.stroke', stylers: [{ color: '#efe4cc' }] },
-        { featureType: 'water', stylers: [{ color: '#c9a24a' }] },
-        { featureType: 'road', stylers: [{ color: '#e0cfa8' }] },
-        { featureType: 'poi', stylers: [{ visibility: 'simplified' }] },
-      ],
+      styles: retroMapStyles,
     });
     info = new g.InfoWindow();
+
+    const home = new g.Marker({
+      position: guideHome.location,
+      map,
+      icon: homeMarkerIcon(window.google),
+      title: guideHome.name,
+      zIndex: 999,
+    });
+    home.addListener('click', () => {
+      info.setContent(`
+        <div style="font-family:Georgia,serif;max-width:220px">
+          <div style="font-weight:700;font-size:14px;margin-bottom:2px">🏠 ${guideHome.name}</div>
+          <div style="font-size:12px;margin-bottom:4px">${guideHome.address}</div>
+          <div style="font-size:11px;color:#555">Kode ${guideHome.code} · leil. ${guideHome.apartment}</div>
+        </div>`);
+      info.open({ map, anchor: home });
+    });
+    markers.push(home);
+
     const bounds = new g.LatLngBounds();
+    bounds.extend(home.getPosition());
     stops.forEach((s) => {
       const m = new g.Marker({
         position: { lat: s.location.lat, lng: s.location.lng },
@@ -78,7 +68,7 @@ async function init() {
       markers.push(m);
       bounds.extend(m.getPosition());
     });
-    if (stops.length) map.fitBounds(bounds, 40);
+    if (markers.length > 1) map.fitBounds(bounds, 40);
     status.value = 'ready';
   } catch (e) {
     status.value = 'error';
