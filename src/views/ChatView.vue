@@ -1,15 +1,27 @@
 <script setup>
-import { ref, nextTick, watch } from 'vue';
+import { ref, computed, nextTick, watch, onUnmounted } from 'vue';
 import { useChat } from '../composables/useChat.js';
 import { useAuth } from '../composables/useAuth.js';
 
-const { messages, ready, error, send } = useChat();
+const { messages, ready, error, send, typingOthers, notifyTyping, stopTyping } = useChat();
 const { current } = useAuth();
 
 const draft = ref('');
 const list = ref(null);
 const sending = ref(false);
 const sendError = ref('');
+
+let idleTimer = null;
+
+function onInput() {
+  if (!draft.value.trim()) {
+    stopTyping();
+    return;
+  }
+  notifyTyping();
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => stopTyping(), 3500);
+}
 
 async function submit() {
   if (!draft.value.trim()) return;
@@ -31,10 +43,25 @@ function fmtTime(ts) {
   return d.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
 }
 
+const typingLabel = computed(() => {
+  const names = typingOthers.value.map((t) => t.name);
+  if (names.length === 0) return '';
+  if (names.length === 1) return `${names[0]} skriver`;
+  if (names.length === 2) return `${names[0]} og ${names[1]} skriver`;
+  return `${names.slice(0, -1).join(', ')} og ${names[names.length - 1]} skriver`;
+});
+
 watch(messages, async () => {
   await nextTick();
   if (list.value) list.value.scrollTop = list.value.scrollHeight;
 }, { deep: true, flush: 'post' });
+
+watch(typingOthers, async () => {
+  await nextTick();
+  if (list.value) list.value.scrollTop = list.value.scrollHeight;
+}, { deep: true, flush: 'post' });
+
+onUnmounted(() => { if (idleTimer) clearTimeout(idleTimer); });
 </script>
 
 <template>
@@ -67,6 +94,15 @@ watch(messages, async () => {
           <p class="text-sm whitespace-pre-wrap leading-snug">{{ m.text }}</p>
         </div>
       </div>
+
+      <div v-if="typingOthers.length" class="flex justify-start">
+        <div class="stamp-sm bg-paper px-3 py-2 flex items-center gap-2">
+          <p class="text-[10px] stencil opacity-80">{{ typingLabel }}</p>
+          <span class="typing-dots" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+        </div>
+      </div>
     </div>
 
     <form class="p-3 border-t-2 border-ink bg-paper" @submit.prevent="submit">
@@ -78,9 +114,33 @@ watch(messages, async () => {
           class="input flex-1"
           placeholder="Melding til gutta…"
           :disabled="sending || !ready"
+          @input="onInput"
+          @blur="stopTyping"
         />
         <button class="btn-primary" :disabled="sending || !ready || !draft.trim()">Send</button>
       </div>
     </form>
   </div>
 </template>
+
+<style scoped>
+.typing-dots {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+.typing-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #2a1810;
+  display: inline-block;
+  animation: typing-bounce 1.2s infinite ease-in-out;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-3px); opacity: 1; }
+}
+</style>
