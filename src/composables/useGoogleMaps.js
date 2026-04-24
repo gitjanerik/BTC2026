@@ -81,6 +81,33 @@ export function homeMarkerIcon(g) {
   };
 }
 
+const CHIP_SVG = encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'>
+    <circle cx='18' cy='18' r='16' fill='#a8291d' stroke='#2a1810' stroke-width='2'/>
+    <g fill='#efe4cc'>
+      <rect x='16.5' y='1.5' width='3' height='6'/>
+      <rect x='16.5' y='28.5' width='3' height='6'/>
+      <rect x='1.5' y='16.5' width='6' height='3'/>
+      <rect x='28.5' y='16.5' width='6' height='3'/>
+      <rect x='5.2' y='5.2' width='3' height='6' transform='rotate(-45 6.7 8.2)'/>
+      <rect x='27.8' y='24.8' width='3' height='6' transform='rotate(-45 29.3 27.8)'/>
+      <rect x='27.8' y='5.2' width='3' height='6' transform='rotate(45 29.3 8.2)'/>
+      <rect x='5.2' y='24.8' width='3' height='6' transform='rotate(45 6.7 27.8)'/>
+    </g>
+    <circle cx='18' cy='18' r='8' fill='#efe4cc' stroke='#2a1810' stroke-width='1.5'/>
+    <text x='18' y='22' text-anchor='middle' font-family='Russo One, sans-serif' font-size='10' fill='#2a1810' font-weight='700'>♠</text>
+  </svg>`
+);
+
+export function casinoMarkerIcon(g) {
+  return {
+    url: `data:image/svg+xml;utf-8,${CHIP_SVG}`,
+    scaledSize: new g.maps.Size(36, 36),
+    anchor: new g.maps.Point(18, 18),
+    labelOrigin: new g.maps.Point(18, 18),
+  };
+}
+
 const BEER_SVG = encodeURIComponent(
   `<svg xmlns='http://www.w3.org/2000/svg' width='34' height='42' viewBox='0 0 34 42'>
     <path d='M6 10 L22 10 L21 36 Q21 39 18 39 L10 39 Q7 39 7 36 Z'

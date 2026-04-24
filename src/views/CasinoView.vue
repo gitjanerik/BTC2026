@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { guideHome } from '../data/guide.js';
 import { beerSpots } from '../data/beer.js';
-import { loadGoogleMaps, mapStylesForTheme, homeMarkerIcon, beerMarkerIcon } from '../composables/useGoogleMaps.js';
+import { loadGoogleMaps, mapStylesForTheme, homeMarkerIcon, beerMarkerIcon, casinoMarkerIcon } from '../composables/useGoogleMaps.js';
 
 const mapEl = ref(null);
 const status = ref('idle');
@@ -66,12 +66,7 @@ function renderCasinos() {
     const m = new g.Marker({
       position: c.location,
       map,
-      label: {
-        text: String(i + 1),
-        color: '#efe4cc',
-        fontFamily: 'Russo One',
-        fontSize: '12px',
-      },
+      icon: casinoMarkerIcon(google),
       title: c.name,
     });
     m.addListener('click', () => {
