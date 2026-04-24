@@ -536,7 +536,7 @@ onUnmounted(() => {
 }
 .chat-compose {
   position: sticky;
-  bottom: 0;
+  bottom: calc(env(safe-area-inset-bottom) + 3.75rem);
   z-index: 5;
 }
 html[data-fontscale="3"] .chat-compose {
