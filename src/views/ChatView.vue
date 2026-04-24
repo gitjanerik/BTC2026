@@ -35,6 +35,8 @@ const { markChatSeen } = useUnread();
 
 const draft = ref('');
 const list = ref(null);
+const newestAnchor = ref(null);
+const downBtn = ref(null);
 const textarea = ref(null);
 const sending = ref(false);
 const sendError = ref('');
@@ -266,69 +268,31 @@ async function doDelete(m) {
   await remove(m);
 }
 
-function scrollToBottom() {
-  if (list.value) list.value.scrollTop = list.value.scrollHeight;
+function scrollToNewest() {
+  newestAnchor.value?.scrollIntoView({ block: 'end', behavior: 'smooth' });
 }
 
-function scrollToBottomRobust() {
-  scrollToBottom();
-  requestAnimationFrame(() => {
-    scrollToBottom();
-    requestAnimationFrame(scrollToBottom);
-  });
-  setTimeout(scrollToBottom, 120);
-  setTimeout(scrollToBottom, 400);
-  setTimeout(scrollToBottom, 1200);
+function scrollToTop() {
+  list.value?.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-let mountObserver = null;
-let mountObserverTimer = null;
-
-function installMountScroller() {
-  if (!list.value) return;
-  // Any DOM mutation inside the list within the first ~3s re-triggers scroll,
-  // so slow Firestore loads / late font/image layout still end up at the bottom.
-  mountObserver = new MutationObserver(scrollToBottom);
-  mountObserver.observe(list.value, { childList: true, subtree: true });
-  mountObserverTimer = setTimeout(() => {
-    if (mountObserver) { mountObserver.disconnect(); mountObserver = null; }
-  }, 3000);
-}
-
-watch(messages, async () => {
-  await nextTick();
-  scrollToBottomRobust();
-  markChatSeen();
-}, { deep: true, flush: 'post' });
-
-watch(ready, async () => {
-  await nextTick();
-  scrollToBottomRobust();
-}, { flush: 'post' });
-
-watch(typingOthers, async () => {
-  await nextTick();
-  scrollToBottom();
-}, { deep: true, flush: 'post' });
+watch(messages, () => { markChatSeen(); }, { deep: true, flush: 'post' });
 
 onMounted(async () => {
   await nextTick();
-  scrollToBottomRobust();
-  installMountScroller();
+  downBtn.value?.click();
   markChatSeen();
   autoGrow();
 });
 
 onUnmounted(() => {
   if (idleTimer) clearTimeout(idleTimer);
-  if (mountObserver) { mountObserver.disconnect(); mountObserver = null; }
-  if (mountObserverTimer) { clearTimeout(mountObserverTimer); mountObserverTimer = null; }
   markChatSeen();
 });
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col min-h-0">
+  <div class="flex-1 flex flex-col min-h-0 relative">
     <div class="p-3 border-b-2 border-ink bg-deep">
       <p class="text-center">
         <span class="ribbon text-[10px]">Kanalen</span>
@@ -336,7 +300,7 @@ onUnmounted(() => {
       <h2 class="stencil text-2xl text-center mt-1">Chat</h2>
     </div>
 
-    <div ref="list" class="flex-1 overflow-y-auto px-3 pt-3 pb-48 space-y-3">
+    <div ref="list" class="flex-1 overflow-y-auto px-3 pt-3 space-y-3">
       <p v-if="!ready" class="text-center text-sm opacity-60">Kobler til…</p>
       <p v-if="error" class="text-sovred text-sm text-center">{{ error }}</p>
       <p v-if="ready && messages.length === 0 && !error" class="text-center text-sm opacity-60">
@@ -491,7 +455,25 @@ onUnmounted(() => {
           </span>
         </div>
       </div>
+
+      <div ref="newestAnchor" id="chat-newest" aria-hidden="true" class="h-0" />
+      <div aria-hidden="true" class="h-48" />
     </div>
+
+    <button
+      ref="downBtn"
+      type="button"
+      class="absolute top-24 right-3 z-20 w-11 h-11 stamp-sm bg-paper flex items-center justify-center text-lg leading-none"
+      :aria-label="'Rull til nyeste melding'"
+      @click="scrollToNewest"
+    >↓</button>
+
+    <button
+      type="button"
+      class="absolute bottom-[5.5rem] right-3 z-20 w-11 h-11 stamp-sm bg-paper flex items-center justify-center text-lg leading-none"
+      :aria-label="'Rull helt til topp'"
+      @click="scrollToTop"
+    >↑</button>
 
     <form class="p-3 border-t-2 border-ink bg-paper" @submit.prevent="submit">
       <div v-if="replyingTo" class="flex items-start gap-2 mb-2 stamp-sm bg-deep/60 px-2 py-1">
