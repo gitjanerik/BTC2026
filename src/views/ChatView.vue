@@ -179,6 +179,15 @@ function fmtTime(ts) {
   return d.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
 }
 
+function fmtFull(ts) {
+  const d = ts?.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+  if (!d) return '';
+  return d.toLocaleString('no-NO', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
 function renderText(text) {
   if (!text) return [];
   const parts = [];
@@ -429,6 +438,10 @@ onUnmounted(() => {
                   @click="doDelete(m)"
                 ><span aria-hidden="true">🗑</span> Slett</button>
               </template>
+            </div>
+            <div class="border-t-2 border-ink/30 px-3 py-1.5 text-[10px] opacity-75 leading-tight">
+              <p>Publisert: {{ fmtFull(m.createdAt) }}</p>
+              <p v-if="m.editedAt">Sist redigert: {{ fmtFull(m.editedAt) }}</p>
             </div>
           </div>
         </div>
