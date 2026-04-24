@@ -45,6 +45,25 @@ export const retroMapStyles = [
   { featureType: 'poi', stylers: [{ visibility: 'simplified' }] },
 ];
 
+export const retroDarkMapStyles = [
+  { elementType: 'geometry', stylers: [{ color: '#1a1510' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#c9a24a' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#0f0c08' }] },
+  { featureType: 'water', stylers: [{ color: '#3a2a14' }] },
+  { featureType: 'road', stylers: [{ color: '#2a1f15' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#d4b466' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'simplified' }] },
+  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#c9a24a' }] },
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#4a3d2a' }] },
+  { featureType: 'landscape', stylers: [{ color: '#1f1a13' }] },
+  { featureType: 'transit', elementType: 'labels.text.fill', stylers: [{ color: '#b48a4a' }] },
+];
+
+export function mapStylesForTheme() {
+  const dark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  return dark ? retroDarkMapStyles : retroMapStyles;
+}
+
 const HOUSE_SVG = encodeURIComponent(
   `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='48' viewBox='0 0 40 48'>
     <path d='M20 2 L2 20 L8 20 L8 44 L32 44 L32 20 L38 20 Z' fill='#d9601f' stroke='#2a1810' stroke-width='2.5' stroke-linejoin='round'/>

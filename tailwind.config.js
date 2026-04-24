@@ -1,27 +1,30 @@
 /** @type {import('tailwindcss').Config} */
+const rgbVar = (name) => `rgb(var(${name}) / <alpha-value>)`;
+
 export default {
   content: ['./index.html', './src/**/*.{vue,js}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        paper: '#efe4cc',
-        deep: '#e0cfa8',
+        paper: rgbVar('--c-paper'),
+        deep: rgbVar('--c-deep'),
         orange: {
-          DEFAULT: '#d9601f',
-          dark: '#b84d13',
+          DEFAULT: rgbVar('--c-orange'),
+          dark: rgbVar('--c-orange-dark'),
         },
-        sovred: '#a8291d',
-        mustard: '#c9a24a',
-        forest: '#4a5d3a',
-        ink: '#2a1810',
+        sovred: rgbVar('--c-sovred'),
+        mustard: rgbVar('--c-mustard'),
+        forest: rgbVar('--c-forest'),
+        ink: rgbVar('--c-ink'),
       },
       fontFamily: {
         display: ['"Russo One"', 'sans-serif'],
         body: ['Spectral', 'Georgia', 'serif'],
       },
       boxShadow: {
-        stamp: '4px 4px 0 0 #2a1810',
-        'stamp-sm': '2px 2px 0 0 #2a1810',
+        stamp: '4px 4px 0 0 rgb(var(--c-ink))',
+        'stamp-sm': '2px 2px 0 0 rgb(var(--c-ink))',
       },
     },
   },

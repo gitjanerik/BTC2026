@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { guideHome } from '../data/guide.js';
 import { beerSpots } from '../data/beer.js';
-import { loadGoogleMaps, retroMapStyles, homeMarkerIcon, beerMarkerIcon } from '../composables/useGoogleMaps.js';
+import { loadGoogleMaps, mapStylesForTheme, homeMarkerIcon, beerMarkerIcon } from '../composables/useGoogleMaps.js';
 
 const mapEl = ref(null);
 const status = ref('idle');
@@ -145,7 +145,7 @@ async function init() {
       zoom: 13,
       mapTypeControl: false,
       streetViewControl: false,
-      styles: retroMapStyles,
+      styles: mapStylesForTheme(),
     });
     info = new g.InfoWindow();
 

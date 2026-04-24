@@ -3,9 +3,11 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { users } from '../data/users.js';
 import { useAuth } from '../composables/useAuth.js';
+import { useSettings } from '../composables/useSettings.js';
 
 const router = useRouter();
 const { login } = useAuth();
+const { fontScale, theme, setFontScale, setTheme } = useSettings();
 
 const selected = ref(null);
 const pin = ref('');
@@ -85,6 +87,41 @@ async function submit() {
           <p class="text-[10px] opacity-60 text-center leading-tight">
             PIN-en hindrer utilsiktet adgang — ikke reell sikkerhet. Ikke del sensitive data i chat.
           </p>
+        </div>
+
+        <div class="stamp p-4 mt-4 space-y-3 bg-paper">
+          <div>
+            <p class="text-xs stencil mb-1">Gubbetilpasning / alderstillegg</p>
+            <p class="text-[11px] opacity-70 italic mb-2">Justér skriftstørrelse</p>
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                v-for="n in [1, 2, 3]"
+                :key="n"
+                type="button"
+                class="stamp-sm px-2 py-2 text-sm font-display uppercase"
+                :class="fontScale === n ? 'bg-orange text-paper' : 'bg-paper'"
+                @click="setFontScale(n)"
+              >{{ n }}x</button>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-xs stencil mb-2">Tema</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                class="stamp-sm px-2 py-2 text-sm font-display uppercase"
+                :class="theme === 'light' ? 'bg-mustard' : 'bg-paper'"
+                @click="setTheme('light')"
+              >☀ Light</button>
+              <button
+                type="button"
+                class="stamp-sm px-2 py-2 text-sm font-display uppercase"
+                :class="theme === 'dark' ? 'bg-sovred text-paper' : 'bg-paper'"
+                @click="setTheme('dark')"
+              >☾ Dark</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
