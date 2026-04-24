@@ -4,6 +4,26 @@ import { useChat, MAX_LEN } from '../composables/useChat.js';
 import { useAuth } from '../composables/useAuth.js';
 import { useUnread } from '../composables/useUnread.js';
 
+const vAutoOverflow = {
+  mounted(el) {
+    const check = () => {
+      const over = el.scrollHeight > el.clientHeight + 2;
+      el.classList.toggle('has-overflow', over);
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    el._ro = ro;
+  },
+  updated(el) {
+    const over = el.scrollHeight > el.clientHeight + 2;
+    el.classList.toggle('has-overflow', over);
+  },
+  unmounted(el) {
+    if (el._ro) el._ro.disconnect();
+  },
+};
+
 const {
   messages, ready, error, send,
   typingOthers, notifyTyping, stopTyping,
@@ -353,7 +373,7 @@ onUnmounted(() => {
               </div>
             </template>
 
-            <div v-else class="chat-bubble-text text-sm whitespace-pre-wrap leading-snug">
+            <div v-else v-auto-overflow class="chat-bubble-text text-sm whitespace-pre-wrap leading-snug">
               <template v-for="(part, i) in renderText(m.text)" :key="i">
                 <a
                   v-if="part.type === 'url'"
@@ -489,6 +509,9 @@ onUnmounted(() => {
 }
 .chat-bubble-text {
   max-height: calc(1.375em * 6);
+  overflow-y: hidden;
+}
+.chat-bubble-text.has-overflow {
   overflow-y: auto;
 }
 .chat-quote {
