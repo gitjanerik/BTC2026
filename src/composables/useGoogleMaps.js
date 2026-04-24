@@ -61,3 +61,23 @@ export function homeMarkerIcon(g) {
     anchor: new g.maps.Point(20, 44),
   };
 }
+
+const BEER_SVG = encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='34' height='42' viewBox='0 0 34 42'>
+    <path d='M6 10 L22 10 L21 36 Q21 39 18 39 L10 39 Q7 39 7 36 Z'
+          fill='#f1c43a' stroke='#2a1810' stroke-width='2' stroke-linejoin='round'/>
+    <path d='M8 10 Q10 6 13 8 Q15 5 18 7 Q21 6 21 10' fill='#efe4cc' stroke='#2a1810' stroke-width='1.4'/>
+    <path d='M22 14 L28 14 Q30 14 30 17 L30 25 Q30 28 28 28 L22 28'
+          fill='none' stroke='#2a1810' stroke-width='2' stroke-linejoin='round'/>
+    <line x1='11' y1='16' x2='11' y2='34' stroke='#2a1810' stroke-width='1' opacity='0.4'/>
+    <line x1='17' y1='16' x2='17' y2='34' stroke='#2a1810' stroke-width='1' opacity='0.4'/>
+  </svg>`
+);
+
+export function beerMarkerIcon(g) {
+  return {
+    url: `data:image/svg+xml;utf-8,${BEER_SVG}`,
+    scaledSize: new g.maps.Size(34, 42),
+    anchor: new g.maps.Point(17, 38),
+  };
+}

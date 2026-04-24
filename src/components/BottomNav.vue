@@ -1,17 +1,20 @@
 <script setup>
-import { ref, watch, nextTick, onMounted } from 'vue';
+import { ref, watch, nextTick, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
+import { useUnread } from '../composables/useUnread.js';
 
-const tabs = [
+const { unreadChat, unreadBingo } = useUnread();
+
+const tabs = computed(() => [
   { to: '/program',   label: 'Program', icon: '★' },
   { to: '/map',       label: 'Kart',    icon: '◎' },
   { to: '/nightlife', label: 'Natt',    icon: '☾' },
   { to: '/casino',    label: 'Casino',  icon: '♠' },
-  { to: '/chat',      label: 'Chat',    icon: '✉' },
-  { to: '/bingo',     label: 'Bingo',   icon: '▣' },
+  { to: '/chat',      label: 'Chat',    icon: '✉', badge: unreadChat.value },
+  { to: '/bingo',     label: 'Bingo',   icon: '▣', badge: unreadBingo.value },
   { to: '/phrases',   label: 'Fraser',  icon: '♪' },
   { to: '/currency',  label: 'Valuta',  icon: '¤' },
-];
+]);
 
 const nav = ref(null);
 const route = useRoute();
@@ -33,10 +36,16 @@ onMounted(scrollActiveIntoView);
         <router-link
           :to="t.to"
           :data-active="route.path === t.to ? 'true' : 'false'"
-          class="flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-display uppercase tracking-wide text-ink hover:bg-deep/50"
+          class="relative flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-display uppercase tracking-wide text-ink hover:bg-deep/50"
           active-class="bg-orange text-paper"
         >
-          <span class="text-base leading-none" aria-hidden="true">{{ t.icon }}</span>
+          <span class="relative text-base leading-none" aria-hidden="true">
+            {{ t.icon }}
+            <span
+              v-if="t.badge"
+              class="absolute -top-1.5 -right-2.5 min-w-[16px] h-[16px] px-1 rounded-full bg-sovred text-paper text-[9px] font-display leading-[16px] text-center border border-ink"
+            >{{ t.badge }}</span>
+          </span>
           <span>{{ t.label }}</span>
         </router-link>
       </li>

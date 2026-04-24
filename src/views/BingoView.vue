@@ -1,12 +1,18 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { bingoItems } from '../data/bingo.js';
 import { users } from '../data/users.js';
 import { useBingo } from '../composables/useBingo.js';
 import { useAuth } from '../composables/useAuth.js';
+import { useUnread } from '../composables/useUnread.js';
 
 const { current } = useAuth();
 const { everyones, ready, error, markDone, unmark } = useBingo();
+const { markBingoSeen } = useUnread();
+
+onMounted(() => markBingoSeen());
+onUnmounted(() => markBingoSeen());
+watch(everyones, () => markBingoSeen(), { deep: true });
 
 const busyId = ref(null);
 const actionError = ref('');

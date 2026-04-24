@@ -1,7 +1,7 @@
 import { ref, computed, onUnmounted } from 'vue';
 import {
   collection, collectionGroup, query, orderBy, limit, onSnapshot, addDoc, serverTimestamp,
-  doc, setDoc, deleteDoc,
+  doc, setDoc, deleteDoc, updateDoc,
 } from 'firebase/firestore';
 import { db, hasFirebaseConfig } from '../firebase.js';
 import { useAuth } from './useAuth.js';
@@ -75,6 +75,33 @@ export function useChat() {
     stopTyping();
   }
 
+  async function editMessage(msgId, text) {
+    if (!hasFirebaseConfig || !db) throw new Error('Firebase ikke konfigurert');
+    const { current } = useAuth();
+    const u = current.value;
+    if (!u?.uid) throw new Error('Ikke innlogget');
+    const msg = messages.value.find((m) => m.id === msgId);
+    if (!msg) throw new Error('Melding ikke funnet');
+    if (msg.senderId !== u.uid) throw new Error('Kan kun redigere egne meldinger');
+    const clean = text.trim();
+    if (!clean) return;
+    await updateDoc(doc(db, 'chat', msgId), {
+      text: clean,
+      editedAt: serverTimestamp(),
+    });
+  }
+
+  async function deleteMessage(msgId) {
+    if (!hasFirebaseConfig || !db) throw new Error('Firebase ikke konfigurert');
+    const { current } = useAuth();
+    const u = current.value;
+    if (!u?.uid) throw new Error('Ikke innlogget');
+    const msg = messages.value.find((m) => m.id === msgId);
+    if (!msg) return;
+    if (msg.senderId !== u.uid) throw new Error('Kan kun slette egne meldinger');
+    await deleteDoc(doc(db, 'chat', msgId));
+  }
+
   async function toggleReaction(msgId, emoji) {
     if (!hasFirebaseConfig || !db) return;
     const { current } = useAuth();
@@ -121,5 +148,6 @@ export function useChat() {
     messages, ready, error, send,
     typingOthers, notifyTyping, stopTyping,
     reactions, toggleReaction,
+    editMessage, deleteMessage,
   };
 }

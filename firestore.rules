@@ -8,6 +8,11 @@ service cloud.firestore {
     match /chat/{id} {
       allow create: if request.auth != null
                     && request.resource.data.senderId == request.auth.uid;
+      allow update: if request.auth != null
+                    && resource.data.senderId == request.auth.uid
+                    && request.resource.data.senderId == resource.data.senderId;
+      allow delete: if request.auth != null
+                    && resource.data.senderId == request.auth.uid;
     }
 
     match /chat/{msgId}/reactions/{userId} {

@@ -1,26 +1,35 @@
 <script setup>
-import { ref, computed, nextTick, watch, onUnmounted } from 'vue';
+import { ref, computed, nextTick, watch, onUnmounted, onMounted } from 'vue';
 import { useChat } from '../composables/useChat.js';
 import { useAuth } from '../composables/useAuth.js';
+import { useUnread } from '../composables/useUnread.js';
 
 const {
   messages, ready, error, send,
   typingOthers, notifyTyping, stopTyping,
   reactions, toggleReaction,
+  editMessage, deleteMessage,
 } = useChat();
 const { current } = useAuth();
+const { markChatSeen } = useUnread();
 
 const draft = ref('');
 const list = ref(null);
+const textarea = ref(null);
 const sending = ref(false);
 const sendError = ref('');
-const pickerFor = ref(null); // msgId currently showing picker
+const pickerFor = ref(null);
+const editingId = ref(null);
+const editDraft = ref('');
+const menuFor = ref(null);
 
 const EMOJIS = ['👍', '❤️', '😂', '🔥', '🎉', '😮'];
+const URL_RE = /((?:https?:\/\/|www\.)[^\s<>"']+)/gi;
 
 let idleTimer = null;
 
 function onInput() {
+  autoGrow();
   if (!draft.value.trim()) {
     stopTyping();
     return;
@@ -30,6 +39,14 @@ function onInput() {
   idleTimer = setTimeout(() => stopTyping(), 3500);
 }
 
+function autoGrow() {
+  const el = textarea.value;
+  if (!el) return;
+  el.style.height = 'auto';
+  const max = Math.round(window.innerHeight * 0.4);
+  el.style.height = Math.min(el.scrollHeight, max) + 'px';
+}
+
 async function submit() {
   if (!draft.value.trim()) return;
   sendError.value = '';
@@ -37,6 +54,8 @@ async function submit() {
   try {
     await send(draft.value);
     draft.value = '';
+    await nextTick();
+    autoGrow();
   } catch (e) {
     sendError.value = e.message;
   } finally {
@@ -44,10 +63,78 @@ async function submit() {
   }
 }
 
+function onKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    submit();
+  }
+}
+
+function startEdit(m) {
+  menuFor.value = null;
+  editingId.value = m.id;
+  editDraft.value = m.text;
+  nextTick(() => {
+    const el = document.getElementById('edit-' + m.id);
+    if (el) {
+      el.focus();
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, Math.round(window.innerHeight * 0.4)) + 'px';
+    }
+  });
+}
+
+function cancelEdit() {
+  editingId.value = null;
+  editDraft.value = '';
+}
+
+async function saveEdit(m) {
+  if (!editDraft.value.trim()) return;
+  try {
+    await editMessage(m.id, editDraft.value);
+    editingId.value = null;
+    editDraft.value = '';
+  } catch (e) {
+    sendError.value = e.message;
+  }
+}
+
+function editGrow(e) {
+  const el = e.target;
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, Math.round(window.innerHeight * 0.4)) + 'px';
+}
+
+async function remove(m) {
+  menuFor.value = null;
+  if (!confirm('Slette meldingen?')) return;
+  try {
+    await deleteMessage(m.id);
+  } catch (e) {
+    sendError.value = e.message;
+  }
+}
+
 function fmtTime(ts) {
   const d = ts?.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
   if (!d) return '';
   return d.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderText(text) {
+  if (!text) return [];
+  const parts = [];
+  let lastIndex = 0;
+  text.replace(URL_RE, (match, _url, offset) => {
+    if (offset > lastIndex) parts.push({ type: 'text', value: text.slice(lastIndex, offset) });
+    const href = match.startsWith('http') ? match : `https://${match}`;
+    parts.push({ type: 'url', value: match, href });
+    lastIndex = offset + match.length;
+    return match;
+  });
+  if (lastIndex < text.length) parts.push({ type: 'text', value: text.slice(lastIndex) });
+  return parts;
 }
 
 const typingLabel = computed(() => {
@@ -81,17 +168,32 @@ async function pick(msgId, emoji) {
   try { await toggleReaction(msgId, emoji); } catch (e) { sendError.value = e.message; }
 }
 
+function scrollToBottom() {
+  if (list.value) list.value.scrollTop = list.value.scrollHeight;
+}
+
 watch(messages, async () => {
   await nextTick();
-  if (list.value) list.value.scrollTop = list.value.scrollHeight;
+  scrollToBottom();
+  markChatSeen();
 }, { deep: true, flush: 'post' });
 
 watch(typingOthers, async () => {
   await nextTick();
-  if (list.value) list.value.scrollTop = list.value.scrollHeight;
+  scrollToBottom();
 }, { deep: true, flush: 'post' });
 
-onUnmounted(() => { if (idleTimer) clearTimeout(idleTimer); });
+onMounted(async () => {
+  await nextTick();
+  scrollToBottom();
+  markChatSeen();
+  autoGrow();
+});
+
+onUnmounted(() => {
+  if (idleTimer) clearTimeout(idleTimer);
+  markChatSeen();
+});
 </script>
 
 <template>
@@ -118,19 +220,68 @@ onUnmounted(() => { if (idleTimer) clearTimeout(idleTimer); });
       >
         <div class="relative max-w-[85%] group">
           <div
-            class="stamp-sm px-3 py-2"
+            class="stamp-sm px-3 py-2 break-words"
             :class="m.senderId === current?.uid ? 'bg-orange text-paper' : 'bg-paper'"
-            @dblclick="pickerFor = m.id"
+            style="overflow-wrap: anywhere; word-break: break-word;"
           >
-            <p class="text-[10px] stencil opacity-80">{{ m.senderName }} · {{ fmtTime(m.createdAt) }}</p>
-            <p class="text-sm whitespace-pre-wrap leading-snug">{{ m.text }}</p>
+            <p class="text-[10px] stencil opacity-80">
+              {{ m.senderName }} · {{ fmtTime(m.createdAt) }}
+              <span v-if="m.editedAt" class="italic opacity-70">· redigert</span>
+            </p>
+
+            <template v-if="editingId === m.id">
+              <textarea
+                :id="'edit-' + m.id"
+                v-model="editDraft"
+                class="w-full mt-1 input bg-paper text-ink text-sm resize-none"
+                rows="1"
+                @input="editGrow"
+                @keydown.enter.exact.prevent="saveEdit(m)"
+                @keydown.escape="cancelEdit"
+              />
+              <div class="flex gap-1 mt-1 justify-end">
+                <button type="button" class="stamp-sm px-2 py-0.5 text-[10px] font-display uppercase bg-paper text-ink" @click="cancelEdit">Avbryt</button>
+                <button type="button" class="stamp-sm px-2 py-0.5 text-[10px] font-display uppercase bg-forest text-paper" @click="saveEdit(m)">Lagre</button>
+              </div>
+            </template>
+
+            <p v-else class="text-sm whitespace-pre-wrap leading-snug">
+              <template v-for="(part, i) in renderText(m.text)" :key="i">
+                <a
+                  v-if="part.type === 'url'"
+                  :href="part.href"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="chat-link"
+                >{{ part.value }}</a>
+                <template v-else>{{ part.value }}</template>
+              </template>
+            </p>
           </div>
+
           <button
+            v-if="editingId !== m.id"
             type="button"
             class="absolute -top-2 -right-2 w-7 h-7 stamp-sm bg-paper flex items-center justify-center text-sm"
             :aria-label="'Reager på melding'"
             @click="pickerFor = pickerFor === m.id ? null : m.id"
           >☺</button>
+
+          <button
+            v-if="m.senderId === current?.uid && editingId !== m.id"
+            type="button"
+            class="absolute -top-2 -left-2 w-7 h-7 stamp-sm bg-paper flex items-center justify-center text-sm"
+            :aria-label="'Meldingsmeny'"
+            @click.stop="menuFor = menuFor === m.id ? null : m.id"
+          >⋯</button>
+
+          <div
+            v-if="menuFor === m.id"
+            class="absolute z-20 top-6 left-0 stamp bg-paper flex flex-col min-w-[120px]"
+          >
+            <button type="button" class="px-3 py-2 text-left text-xs font-display uppercase hover:bg-deep/50" @click="startEdit(m)">Rediger</button>
+            <button type="button" class="px-3 py-2 text-left text-xs font-display uppercase text-sovred hover:bg-deep/50" @click="remove(m)">Slett</button>
+          </div>
 
           <div
             v-if="pickerFor === m.id"
@@ -178,14 +329,16 @@ onUnmounted(() => { if (idleTimer) clearTimeout(idleTimer); });
 
     <form class="p-3 border-t-2 border-ink bg-paper" @submit.prevent="submit">
       <p v-if="sendError" class="text-sovred text-xs mb-1">{{ sendError }}</p>
-      <div class="flex gap-2">
-        <input
+      <div class="flex gap-2 items-end">
+        <textarea
+          ref="textarea"
           v-model="draft"
-          type="text"
-          class="input flex-1"
+          rows="1"
+          class="input flex-1 resize-none chat-textarea"
           placeholder="Melding til gutta…"
           :disabled="sending || !ready"
           @input="onInput"
+          @keydown="onKeydown"
           @blur="stopTyping"
         />
         <button class="btn-primary" :disabled="sending || !ready || !draft.trim()">Send</button>
@@ -193,14 +346,29 @@ onUnmounted(() => { if (idleTimer) clearTimeout(idleTimer); });
     </form>
 
     <div
-      v-if="pickerFor"
+      v-if="pickerFor || menuFor"
       class="fixed inset-0 z-0"
-      @click="pickerFor = null"
+      @click="pickerFor = null; menuFor = null"
     />
   </div>
 </template>
 
 <style scoped>
+.chat-textarea {
+  max-height: 40vh;
+  min-height: 2.5rem;
+  overflow-y: auto;
+  line-height: 1.3;
+}
+.chat-link {
+  color: #1d4ed8;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.bg-orange .chat-link {
+  color: #cfe0ff;
+}
 .typing-dots {
   display: inline-flex;
   gap: 3px;
