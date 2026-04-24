@@ -10,6 +10,7 @@ const routes = [
   { path: '/bingo', name: 'bingo', component: () => import('../views/BingoView.vue') },
   { path: '/phrases', name: 'phrases', component: () => import('../views/PhrasesView.vue') },
   { path: '/currency', name: 'currency', component: () => import('../views/CurrencyView.vue') },
+  { path: '/weather', name: 'weather', component: () => import('../views/WeatherView.vue') },
   { path: '/nightlife', name: 'nightlife', component: () => import('../views/NightlifeView.vue') },
   { path: '/casino', name: 'casino', component: () => import('../views/CasinoView.vue') },
 ];

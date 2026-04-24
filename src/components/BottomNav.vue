@@ -12,6 +12,7 @@ const tabs = computed(() => [
   { to: '/bingo',     label: 'Bingo',   icon: '▣', badge: unreadBingo.value },
   { to: '/phrases',   label: 'Fraser',  icon: '♪' },
   { to: '/currency',  label: 'Valuta',  icon: '¤' },
+  { to: '/weather',   label: 'Vær',     icon: '☀' },
   { to: '/casino',    label: 'Casino',  icon: '♠' },
   { to: '/nightlife', label: 'Natt',    icon: '☾' },
 ]);
