@@ -49,6 +49,18 @@ body {
   background-attachment: fixed;
   background-size: 180px 180px, auto, auto;
   -webkit-tap-highlight-color: transparent;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+
+/* Overskrifter får ikke bindestrek automatisk — la dem brekke uten mellomrom. */
+h1, h2, h3, .stencil, .font-display {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  -webkit-hyphens: manual;
+  hyphens: manual;
 }
 
 @layer components {

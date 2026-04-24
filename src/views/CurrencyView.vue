@@ -2,33 +2,50 @@
 import { ref, computed, watch } from 'vue';
 import { useCurrency } from '../composables/useCurrency.js';
 
-const { rate, updatedAt, loading, error, refresh } = useCurrency();
+const { rateNOK, rateEUR, updatedAt, loading, error, refresh } = useCurrency();
 
 const ron = ref(100);
 const nok = ref(0);
-const direction = ref('ron-to-nok');
+const eur = ref(0);
+const active = ref('ron'); // siste felt som ble redigert
 
-const rateText = computed(() => (rate.value ? `1 RON = ${rate.value.toFixed(3)} NOK` : '—'));
+const rateText = computed(() => {
+  if (!rateNOK.value || !rateEUR.value) return '—';
+  return `1 RON = ${rateNOK.value.toFixed(3)} NOK · ${rateEUR.value.toFixed(3)} EUR`;
+});
 const updatedText = computed(() => (updatedAt.value ? new Date(updatedAt.value).toLocaleString('no-NO') : '—'));
 
 function recompute() {
-  if (!rate.value) return;
-  if (direction.value === 'ron-to-nok') {
-    nok.value = Number((ron.value * rate.value).toFixed(2));
-  } else {
-    ron.value = Number((nok.value / rate.value).toFixed(2));
-  }
+  const n = rateNOK.value;
+  const e = rateEUR.value;
+  if (!n || !e) return;
+  let baseRon;
+  if (active.value === 'ron') baseRon = Number(ron.value) || 0;
+  else if (active.value === 'nok') baseRon = (Number(nok.value) || 0) / n;
+  else baseRon = (Number(eur.value) || 0) / e;
+
+  if (active.value !== 'ron') ron.value = Number(baseRon.toFixed(2));
+  if (active.value !== 'nok') nok.value = Number((baseRon * n).toFixed(2));
+  if (active.value !== 'eur') eur.value = Number((baseRon * e).toFixed(2));
 }
 
-watch([ron, rate], () => { if (direction.value === 'ron-to-nok') recompute(); });
-watch([nok], () => { if (direction.value === 'nok-to-ron') recompute(); });
-watch(direction, recompute);
-watch(rate, recompute);
+watch(ron, () => { if (active.value === 'ron') recompute(); });
+watch(nok, () => { if (active.value === 'nok') recompute(); });
+watch(eur, () => { if (active.value === 'eur') recompute(); });
+watch([rateNOK, rateEUR], recompute);
+
+// initial fill
+recompute();
 
 const presets = [10, 50, 100, 200, 500];
 function preset(v) {
-  if (direction.value === 'ron-to-nok') ron.value = v;
-  else nok.value = v;
+  if (active.value === 'ron') ron.value = v;
+  else if (active.value === 'nok') nok.value = v;
+  else eur.value = v;
+}
+
+function setActive(which) {
+  active.value = which;
 }
 </script>
 
@@ -37,48 +54,50 @@ function preset(v) {
     <div class="text-center">
       <span class="ribbon text-[10px]">Finans-direktoratet</span>
       <h2 class="stencil text-3xl mt-2">Valuta</h2>
-      <p class="text-xs opacity-70 italic">{{ rateText }} · oppdatert {{ updatedText }}</p>
+      <p class="text-xs opacity-70 italic">{{ rateText }}</p>
+      <p class="text-[10px] opacity-60 italic">oppdatert {{ updatedText }}</p>
     </div>
 
-    <div class="stamp bg-paper p-4 space-y-4">
-      <div class="grid grid-cols-2 gap-2">
-        <button
-          class="stamp-sm py-2 text-sm font-display uppercase"
-          :class="direction === 'ron-to-nok' ? 'bg-orange text-paper' : 'bg-paper'"
-          @click="direction = 'ron-to-nok'"
-        >RON → NOK</button>
-        <button
-          class="stamp-sm py-2 text-sm font-display uppercase"
-          :class="direction === 'nok-to-ron' ? 'bg-orange text-paper' : 'bg-paper'"
-          @click="direction = 'nok-to-ron'"
-        >NOK → RON</button>
-      </div>
+    <div class="stamp bg-paper p-4 space-y-3">
+      <p class="text-[11px] opacity-70 italic text-center">Rediger i ett felt — de to andre oppdateres.</p>
 
-      <div v-if="direction === 'ron-to-nok'" class="space-y-3">
-        <label class="block">
-          <span class="text-xs stencil">RON</span>
-          <input v-model.number="ron" type="number" inputmode="decimal" class="input text-2xl font-display" />
-        </label>
-        <div class="text-center font-display">↓</div>
-        <div class="stamp-sm bg-mustard p-3 text-center">
-          <span class="text-xs stencil">NOK</span>
-          <p class="font-display text-3xl">{{ nok.toFixed(2) }}</p>
-        </div>
-      </div>
+      <label class="block">
+        <span class="text-xs stencil">RON (lei)</span>
+        <input
+          v-model.number="ron"
+          type="number"
+          inputmode="decimal"
+          class="input text-2xl font-display"
+          :class="active === 'ron' ? 'bg-mustard' : ''"
+          @focus="setActive('ron')"
+        />
+      </label>
 
-      <div v-else class="space-y-3">
-        <label class="block">
-          <span class="text-xs stencil">NOK</span>
-          <input v-model.number="nok" type="number" inputmode="decimal" class="input text-2xl font-display" />
-        </label>
-        <div class="text-center font-display">↓</div>
-        <div class="stamp-sm bg-mustard p-3 text-center">
-          <span class="text-xs stencil">RON</span>
-          <p class="font-display text-3xl">{{ ron.toFixed(2) }}</p>
-        </div>
-      </div>
+      <label class="block">
+        <span class="text-xs stencil">NOK (kroner)</span>
+        <input
+          v-model.number="nok"
+          type="number"
+          inputmode="decimal"
+          class="input text-2xl font-display"
+          :class="active === 'nok' ? 'bg-mustard' : ''"
+          @focus="setActive('nok')"
+        />
+      </label>
 
-      <div class="flex flex-wrap gap-2">
+      <label class="block">
+        <span class="text-xs stencil">EUR</span>
+        <input
+          v-model.number="eur"
+          type="number"
+          inputmode="decimal"
+          class="input text-2xl font-display"
+          :class="active === 'eur' ? 'bg-mustard' : ''"
+          @focus="setActive('eur')"
+        />
+      </label>
+
+      <div class="flex flex-wrap gap-2 pt-1">
         <button
           v-for="p in presets"
           :key="p"

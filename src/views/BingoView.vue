@@ -83,10 +83,10 @@ function othersPhotos(itemId) {
 
     <div class="stamp bg-paper p-3">
       <p class="text-xs stencil mb-2">Ledertavle</p>
-      <ul class="grid grid-cols-5 gap-1 text-center">
+      <ul class="scoreboard-grid gap-1 text-center">
         <li v-for="s in scoreboard" :key="s.name" class="stamp-sm p-1 bg-paper">
-          <p class="text-[10px] font-display uppercase truncate">{{ s.name }}</p>
-          <p class="font-display text-lg">{{ s.count }}</p>
+          <p class="text-[10px] font-display uppercase leading-tight break-words">{{ s.name }}</p>
+          <p class="font-display text-lg leading-tight break-words">{{ s.count }}</p>
         </li>
       </ul>
     </div>
@@ -164,3 +164,10 @@ function othersPhotos(itemId) {
     </div>
   </div>
 </template>
+
+<style scoped>
+.scoreboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4rem, 1fr));
+}
+</style>

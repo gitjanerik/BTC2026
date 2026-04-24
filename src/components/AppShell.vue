@@ -19,10 +19,10 @@ function handleLogout() {
     <header class="safe-top px-4 pt-3 pb-2 border-b-2 border-ink bg-deep">
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2 min-w-0">
-          <span class="star text-sovred text-xl" aria-hidden="true" />
+          <span class="star text-sovred text-xl flex-shrink-0" aria-hidden="true" />
           <div class="min-w-0">
-            <h1 class="stencil text-lg leading-none truncate">BTC-gutta 2026</h1>
-            <p class="text-xs opacity-70 truncate">Bucuresti · 24–27. april</p>
+            <h1 class="stencil text-lg leading-tight">BTC-gutta 2026</h1>
+            <p class="text-xs opacity-70">Bucuresti · 24–27. april</p>
           </div>
         </div>
         <button
