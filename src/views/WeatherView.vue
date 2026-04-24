@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { useWeather, LOCATIONS } from '../composables/useWeather.js';
 import Meteogram from '../components/Meteogram.vue';
+import WeatherIcon from '../components/WeatherIcon.vue';
 
 const current = ref(LOCATIONS[0]);
 const { data, loading, error, fetchedAt, refresh } = useWeather(current);
@@ -92,21 +93,6 @@ const tripDays = computed(() =>
 
 const longTerm = computed(() => byDay.value.slice(0, 10));
 
-function symbolIcon(code) {
-  if (!code) return '·';
-  if (code.startsWith('clearsky')) return '☀';
-  if (code.startsWith('fair')) return '🌤';
-  if (code.startsWith('partlycloudy')) return '⛅';
-  if (code.startsWith('cloudy')) return '☁';
-  if (code.startsWith('fog')) return '🌫';
-  if (code.includes('thunder')) return '⛈';
-  if (code.includes('snow')) return '❄';
-  if (code.includes('sleet')) return '🌨';
-  if (code.includes('rainshowers')) return '🌦';
-  if (code.includes('rain') || code.includes('drizzle')) return '🌧';
-  return '·';
-}
-
 function dayLabel(iso) {
   const [y, m, d] = iso.split('-').map(Number);
   const date = new Date(y, m - 1, d, 12);
@@ -183,7 +169,9 @@ const windyEmbed = computed(() => {
             class="stamp-sm bg-paper px-2 py-1 text-center min-w-[56px]"
           >
             <div class="text-[9px] font-display opacity-70">{{ fmtTime(p.time) }}</div>
-            <div class="text-base leading-none" :title="p.symbol || ''">{{ symbolIcon(p.symbol) }}</div>
+            <div class="flex justify-center leading-none" :title="p.symbol || ''">
+              <WeatherIcon :code="p.symbol" :size="22" />
+            </div>
             <div class="text-xs font-display">{{ Math.round(p.temp) }}°</div>
             <div class="text-[9px] opacity-60">{{ p.precip > 0.05 ? p.precip.toFixed(1) + 'mm' : '' }}</div>
           </div>
@@ -205,7 +193,7 @@ const windyEmbed = computed(() => {
         >
           <div class="flex items-center justify-between gap-2 mb-1">
             <div class="flex items-center gap-2">
-              <span class="text-2xl leading-none">{{ symbolIcon(d.symbol) }}</span>
+              <WeatherIcon :code="d.symbol" :size="36" />
               <div>
                 <div class="font-display uppercase text-sm">{{ dayLabel(d.date) }}</div>
                 <div class="text-[10px] opacity-60">{{ d.points.length }} datapunkter</div>
@@ -241,7 +229,7 @@ const windyEmbed = computed(() => {
           :key="d.date"
           class="grid grid-cols-[auto_auto_1fr_auto] items-center gap-3 py-1 border-b border-ink/10 last:border-0"
         >
-          <span class="text-xl w-6 text-center">{{ symbolIcon(d.symbol) }}</span>
+          <span class="w-7 flex justify-center"><WeatherIcon :code="d.symbol" :size="26" /></span>
           <div class="text-xs font-display uppercase w-20">{{ dayLabel(d.date) }}</div>
           <div class="min-w-0">
             <Meteogram :points="d.points" :height="44" :show-axis="false" :show-hours="false" />
