@@ -18,7 +18,6 @@ const list = ref(null);
 const textarea = ref(null);
 const sending = ref(false);
 const sendError = ref('');
-const pickerFor = ref(null);
 const editingId = ref(null);
 const editDraft = ref('');
 const editError = ref('');
@@ -200,8 +199,51 @@ function myEmoji(msgId) {
 }
 
 async function pick(msgId, emoji) {
-  pickerFor.value = null;
+  menuFor.value = null;
   try { await toggleReaction(msgId, emoji); } catch (e) { sendError.value = e.message; }
+}
+
+let pressTimer = null;
+let pressStart = null;
+
+function startPress(m, e) {
+  if (editingId.value === m.id) return;
+  pressStart = { x: e.clientX, y: e.clientY };
+  pressTimer = setTimeout(() => {
+    pressTimer = null;
+    menuFor.value = m.id;
+    if (navigator.vibrate) navigator.vibrate(20);
+  }, 450);
+}
+
+function movePress(e) {
+  if (!pressStart || !pressTimer) return;
+  const dx = e.clientX - pressStart.x;
+  const dy = e.clientY - pressStart.y;
+  if (dx * dx + dy * dy > 100) cancelPress();
+}
+
+function cancelPress() {
+  if (pressTimer) clearTimeout(pressTimer);
+  pressTimer = null;
+  pressStart = null;
+}
+
+function openMenu(m) {
+  menuFor.value = menuFor.value === m.id ? null : m.id;
+}
+
+function doReply(m) {
+  menuFor.value = null;
+  startReply(m);
+}
+
+function doEdit(m) {
+  startEdit(m);
+}
+
+async function doDelete(m) {
+  await remove(m);
 }
 
 function scrollToBottom() {
@@ -256,9 +298,15 @@ onUnmounted(() => {
       >
         <div class="relative max-w-[85%] group">
           <div
-            class="stamp-sm px-3 py-2 break-words"
+            class="stamp-sm px-3 py-2 break-words chat-bubble"
             :class="m.senderId === current?.uid ? 'bg-orange text-paper' : 'bg-paper'"
             style="overflow-wrap: anywhere; word-break: break-word;"
+            @pointerdown="startPress(m, $event)"
+            @pointermove="movePress"
+            @pointerup="cancelPress"
+            @pointerleave="cancelPress"
+            @pointercancel="cancelPress"
+            @contextmenu.prevent
           >
             <div
               v-if="m.replyTo"
@@ -322,40 +370,18 @@ onUnmounted(() => {
           <button
             v-if="editingId !== m.id"
             type="button"
-            class="absolute -top-2 -right-2 w-7 h-7 stamp-sm bg-paper flex items-center justify-center text-sm"
-            :aria-label="'Reager på melding'"
-            @click="pickerFor = pickerFor === m.id ? null : m.id"
-          >☺</button>
-
-          <button
-            v-if="m.senderId === current?.uid && editingId !== m.id"
-            type="button"
-            class="absolute -top-2 -left-2 w-7 h-7 stamp-sm bg-paper flex items-center justify-center text-sm"
-            :aria-label="'Meldingsmeny'"
-            @click.stop="menuFor = menuFor === m.id ? null : m.id"
-          >⋯</button>
-
-          <button
-            v-if="m.senderId !== current?.uid"
-            type="button"
-            class="absolute -top-2 -left-2 w-7 h-7 stamp-sm bg-paper flex items-center justify-center text-sm"
-            :aria-label="'Svar på melding'"
-            @click.stop="startReply(m)"
-          >↩</button>
+            class="chat-menu-trigger absolute top-0.5 right-1 text-base leading-none px-1"
+            :class="m.senderId === current?.uid ? 'text-paper' : 'text-ink'"
+            :aria-label="'Åpne meldingsmeny'"
+            @click.stop="openMenu(m)"
+          >⋮</button>
 
           <div
             v-if="menuFor === m.id"
-            class="absolute z-20 top-6 left-0 stamp bg-paper flex flex-col min-w-[120px]"
+            class="absolute z-20 top-full mt-1 stamp bg-paper min-w-[250px] max-w-[90vw]"
+            :class="m.senderId === current?.uid ? 'right-0' : 'left-0'"
           >
-            <button type="button" class="px-3 py-2 text-left text-xs font-display uppercase hover:bg-deep/50" @click="startEdit(m)">Rediger</button>
-            <button type="button" class="px-3 py-2 text-left text-xs font-display uppercase text-sovred hover:bg-deep/50" @click="remove(m)">Slett</button>
-          </div>
-
-          <div
-            v-if="pickerFor === m.id"
-            class="absolute z-10 mt-1 left-0 right-0 flex justify-center"
-          >
-            <div class="stamp bg-paper px-2 py-1 flex gap-1">
+            <div class="flex gap-0.5 p-1 border-b-2 border-ink/30 justify-between">
               <button
                 v-for="e in EMOJIS"
                 :key="e"
@@ -364,6 +390,26 @@ onUnmounted(() => {
                 :class="myEmoji(m.id) === e ? 'bg-mustard' : ''"
                 @click="pick(m.id, e)"
               >{{ e }}</button>
+            </div>
+            <div class="flex flex-col">
+              <button
+                v-if="m.senderId !== current?.uid"
+                type="button"
+                class="px-3 py-2 text-left text-xs font-display uppercase hover:bg-deep/50 flex items-center gap-2"
+                @click="doReply(m)"
+              ><span aria-hidden="true">↩</span> Svar</button>
+              <template v-if="m.senderId === current?.uid">
+                <button
+                  type="button"
+                  class="px-3 py-2 text-left text-xs font-display uppercase hover:bg-deep/50 flex items-center gap-2"
+                  @click="doEdit(m)"
+                ><span aria-hidden="true">✎</span> Rediger</button>
+                <button
+                  type="button"
+                  class="px-3 py-2 text-left text-xs font-display uppercase text-sovred hover:bg-deep/50 flex items-center gap-2"
+                  @click="doDelete(m)"
+                ><span aria-hidden="true">🗑</span> Slett</button>
+              </template>
             </div>
           </div>
         </div>
@@ -428,9 +474,9 @@ onUnmounted(() => {
     </form>
 
     <div
-      v-if="pickerFor || menuFor"
-      class="fixed inset-0 z-0"
-      @click="pickerFor = null; menuFor = null"
+      v-if="menuFor"
+      class="fixed inset-0 z-10"
+      @click="menuFor = null"
     />
   </div>
 </template>
@@ -448,6 +494,26 @@ onUnmounted(() => {
 }
 .chat-quote {
   border-left: 3px solid #2a1810;
+}
+.chat-bubble {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  padding-right: 1.5rem;
+}
+.chat-bubble a,
+.chat-bubble textarea,
+.chat-bubble input {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.chat-menu-trigger {
+  opacity: 0.35;
+  transition: opacity 0.15s;
+}
+.chat-menu-trigger:hover,
+.chat-menu-trigger:active {
+  opacity: 0.85;
 }
 .chat-link {
   color: #1d4ed8;
