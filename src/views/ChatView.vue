@@ -477,7 +477,7 @@ onUnmounted(() => {
     </div>
 
 
-    <form class="chat-compose p-3 border-t-2 border-ink bg-paper" @submit.prevent="submit">
+    <form class="chat-compose mx-3 p-3 border-2 border-ink bg-paper/90 shadow-stamp-sm" @submit.prevent="submit">
       <div v-if="replyingTo" class="flex items-start gap-2 mb-2 stamp-sm bg-deep/60 px-2 py-1">
         <div class="flex-1 min-w-0">
           <p class="text-[9px] stencil opacity-80">Svarer til {{ replyingTo.senderName }}</p>
@@ -536,11 +536,13 @@ onUnmounted(() => {
 }
 .chat-compose {
   position: sticky;
-  bottom: calc(env(safe-area-inset-bottom) + 3.75rem);
+  bottom: calc(env(safe-area-inset-bottom) + 4.5rem);
   z-index: 5;
+  backdrop-filter: blur(3px);
 }
 html[data-fontscale="3"] .chat-compose {
   position: static;
+  backdrop-filter: none;
 }
 .chat-bubble {
   -webkit-touch-callout: none;
