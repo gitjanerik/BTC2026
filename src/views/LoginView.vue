@@ -91,7 +91,7 @@ async function submit() {
 
         <div class="stamp p-4 mt-4 space-y-3 bg-paper">
           <div>
-            <p class="text-xs stencil mb-1">Gubbetilpasning / alderstillegg</p>
+            <p class="text-xs stencil mb-1">Alderstillegg</p>
             <p class="text-[11px] opacity-70 italic mb-2">Justér skriftstørrelse</p>
             <div class="grid grid-cols-3 gap-2">
               <button
