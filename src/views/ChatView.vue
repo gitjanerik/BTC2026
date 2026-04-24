@@ -370,8 +370,7 @@ onUnmounted(() => {
           <button
             v-if="editingId !== m.id"
             type="button"
-            class="chat-menu-trigger absolute top-0.5 right-1 text-base leading-none px-1"
-            :class="m.senderId === current?.uid ? 'text-paper' : 'text-ink'"
+            class="absolute -top-2 -right-2 w-7 h-7 stamp-sm bg-paper text-ink flex items-center justify-center text-base leading-none"
             :aria-label="'Åpne meldingsmeny'"
             @click.stop="openMenu(m)"
           >⋮</button>
@@ -499,21 +498,12 @@ onUnmounted(() => {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
-  padding-right: 1.5rem;
 }
 .chat-bubble a,
 .chat-bubble textarea,
 .chat-bubble input {
   -webkit-user-select: text;
   user-select: text;
-}
-.chat-menu-trigger {
-  opacity: 0.35;
-  transition: opacity 0.15s;
-}
-.chat-menu-trigger:hover,
-.chat-menu-trigger:active {
-  opacity: 0.85;
 }
 .chat-link {
   color: #1d4ed8;
