@@ -24,6 +24,7 @@ const editDraft = ref('');
 const editError = ref('');
 const editSaving = ref(false);
 const menuFor = ref(null);
+const replyingTo = ref(null);
 
 const EMOJIS = ['👍', '❤️', '😂', '🔥', '🎉', '😮'];
 const URL_RE = /((?:https?:\/\/|www\.)[^\s<>"']+)/gi;
@@ -54,8 +55,9 @@ async function submit() {
   sendError.value = '';
   sending.value = true;
   try {
-    await send(draft.value);
+    await send(draft.value, replyingTo.value);
     draft.value = '';
+    replyingTo.value = null;
     await nextTick();
     autoGrow();
   } catch (e) {
@@ -63,6 +65,28 @@ async function submit() {
   } finally {
     sending.value = false;
   }
+}
+
+function startReply(m) {
+  replyingTo.value = {
+    id: m.id,
+    text: m.text,
+    senderName: m.senderName,
+    createdAt: m.createdAt,
+  };
+  nextTick(() => {
+    textarea.value?.focus();
+  });
+}
+
+function cancelReply() {
+  replyingTo.value = null;
+}
+
+function oneLine(text) {
+  if (!text) return '';
+  const s = text.replace(/\s+/g, ' ').trim();
+  return s.length > 140 ? s.slice(0, 140) + '…' : s;
 }
 
 function onKeydown(e) {
@@ -236,6 +260,16 @@ onUnmounted(() => {
             :class="m.senderId === current?.uid ? 'bg-orange text-paper' : 'bg-paper'"
             style="overflow-wrap: anywhere; word-break: break-word;"
           >
+            <div
+              v-if="m.replyTo"
+              class="chat-quote mb-1 px-2 py-1 text-[11px]"
+              :class="m.senderId === current?.uid ? 'bg-paper/25' : 'bg-deep/60'"
+            >
+              <p class="truncate leading-tight">{{ oneLine(m.replyTo.text) }}</p>
+              <p class="text-[9px] stencil opacity-80 mt-0.5">
+                {{ m.replyTo.senderName }}<span v-if="m.replyTo.createdAt"> · {{ fmtTime(m.replyTo.createdAt) }}</span>
+              </p>
+            </div>
             <p class="text-[10px] stencil opacity-80">
               {{ m.senderName }} · {{ fmtTime(m.createdAt) }}
               <span v-if="m.editedAt" class="italic opacity-70">· redigert</span>
@@ -301,6 +335,14 @@ onUnmounted(() => {
             @click.stop="menuFor = menuFor === m.id ? null : m.id"
           >⋯</button>
 
+          <button
+            v-if="m.senderId !== current?.uid"
+            type="button"
+            class="absolute -top-2 -left-2 w-7 h-7 stamp-sm bg-paper flex items-center justify-center text-sm"
+            :aria-label="'Svar på melding'"
+            @click.stop="startReply(m)"
+          >↩</button>
+
           <div
             v-if="menuFor === m.id"
             class="absolute z-20 top-6 left-0 stamp bg-paper flex flex-col min-w-[120px]"
@@ -354,6 +396,18 @@ onUnmounted(() => {
     </div>
 
     <form class="p-3 border-t-2 border-ink bg-paper" @submit.prevent="submit">
+      <div v-if="replyingTo" class="flex items-start gap-2 mb-2 stamp-sm bg-deep/60 px-2 py-1">
+        <div class="flex-1 min-w-0">
+          <p class="text-[9px] stencil opacity-80">Svarer til {{ replyingTo.senderName }}</p>
+          <p class="text-[11px] truncate leading-tight">{{ oneLine(replyingTo.text) }}</p>
+        </div>
+        <button
+          type="button"
+          class="text-lg leading-none px-1 opacity-70 hover:opacity-100"
+          :aria-label="'Avbryt svar'"
+          @click="cancelReply"
+        >×</button>
+      </div>
       <p v-if="sendError" class="text-sovred text-xs mb-1">{{ sendError }}</p>
       <div class="flex gap-2 items-end">
         <textarea
@@ -391,6 +445,9 @@ onUnmounted(() => {
 .chat-bubble-text {
   max-height: calc(1.375em * 6);
   overflow-y: auto;
+}
+.chat-quote {
+  border-left: 3px solid #2a1810;
 }
 .chat-link {
   color: #1d4ed8;

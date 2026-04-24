@@ -62,17 +62,26 @@ export function useChat() {
     return typing.value.filter((t) => t.uid !== myUid && t.at && (now.value - t.at) < TYPING_TTL_MS);
   });
 
-  async function send(text) {
+  async function send(text, replyTo = null) {
     const { current } = useAuth();
     const u = current.value;
     if (!u || !text.trim()) return;
     if (!hasFirebaseConfig || !db) throw new Error('Firebase ikke konfigurert');
-    await addDoc(collection(db, 'chat'), {
+    const payload = {
       text: text.trim().slice(0, MAX_LEN),
       senderName: u.name,
       senderId: u.uid,
       createdAt: serverTimestamp(),
-    });
+    };
+    if (replyTo) {
+      payload.replyTo = {
+        id: replyTo.id,
+        text: (replyTo.text || '').slice(0, 200),
+        senderName: replyTo.senderName,
+        createdAt: replyTo.createdAt ?? null,
+      };
+    }
+    await addDoc(collection(db, 'chat'), payload);
     stopTyping();
   }
 
