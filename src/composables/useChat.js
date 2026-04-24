@@ -8,6 +8,7 @@ import { useAuth } from './useAuth.js';
 
 const TYPING_TTL_MS = 4000;
 const TYPING_THROTTLE_MS = 2000;
+const MAX_LEN = 300;
 
 export function useChat() {
   const messages = ref([]);
@@ -67,7 +68,7 @@ export function useChat() {
     if (!u || !text.trim()) return;
     if (!hasFirebaseConfig || !db) throw new Error('Firebase ikke konfigurert');
     await addDoc(collection(db, 'chat'), {
-      text: text.trim(),
+      text: text.trim().slice(0, MAX_LEN),
       senderName: u.name,
       senderId: u.uid,
       createdAt: serverTimestamp(),
@@ -83,7 +84,7 @@ export function useChat() {
     const msg = messages.value.find((m) => m.id === msgId);
     if (!msg) throw new Error('Melding ikke funnet');
     if (msg.senderId !== u.uid) throw new Error('Kan kun redigere egne meldinger');
-    const clean = text.trim();
+    const clean = text.trim().slice(0, MAX_LEN);
     if (!clean) return;
     await updateDoc(doc(db, 'chat', msgId), {
       text: clean,
@@ -149,5 +150,8 @@ export function useChat() {
     typingOthers, notifyTyping, stopTyping,
     reactions, toggleReaction,
     editMessage, deleteMessage,
+    MAX_LEN,
   };
 }
+
+export { MAX_LEN };

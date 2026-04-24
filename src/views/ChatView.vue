@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, nextTick, watch, onUnmounted, onMounted } from 'vue';
-import { useChat } from '../composables/useChat.js';
+import { useChat, MAX_LEN } from '../composables/useChat.js';
 import { useAuth } from '../composables/useAuth.js';
 import { useUnread } from '../composables/useUnread.js';
 
@@ -21,6 +21,8 @@ const sendError = ref('');
 const pickerFor = ref(null);
 const editingId = ref(null);
 const editDraft = ref('');
+const editError = ref('');
+const editSaving = ref(false);
 const menuFor = ref(null);
 
 const EMOJIS = ['👍', '❤️', '😂', '🔥', '🎉', '😮'];
@@ -73,7 +75,8 @@ function onKeydown(e) {
 function startEdit(m) {
   menuFor.value = null;
   editingId.value = m.id;
-  editDraft.value = m.text;
+  editDraft.value = (m.text || '').slice(0, MAX_LEN);
+  editError.value = '';
   nextTick(() => {
     const el = document.getElementById('edit-' + m.id);
     if (el) {
@@ -87,16 +90,25 @@ function startEdit(m) {
 function cancelEdit() {
   editingId.value = null;
   editDraft.value = '';
+  editError.value = '';
 }
 
 async function saveEdit(m) {
-  if (!editDraft.value.trim()) return;
+  const clean = editDraft.value.trim();
+  if (!clean) {
+    editError.value = 'Melding kan ikke være tom';
+    return;
+  }
+  editError.value = '';
+  editSaving.value = true;
   try {
-    await editMessage(m.id, editDraft.value);
+    await editMessage(m.id, clean);
     editingId.value = null;
     editDraft.value = '';
   } catch (e) {
-    sendError.value = e.message;
+    editError.value = e.message || 'Klarte ikke lagre';
+  } finally {
+    editSaving.value = false;
   }
 }
 
@@ -233,19 +245,33 @@ onUnmounted(() => {
               <textarea
                 :id="'edit-' + m.id"
                 v-model="editDraft"
+                :maxlength="MAX_LEN"
                 class="w-full mt-1 input bg-paper text-ink text-sm resize-none"
                 rows="1"
                 @input="editGrow"
                 @keydown.enter.exact.prevent="saveEdit(m)"
                 @keydown.escape="cancelEdit"
               />
-              <div class="flex gap-1 mt-1 justify-end">
-                <button type="button" class="stamp-sm px-2 py-0.5 text-[10px] font-display uppercase bg-paper text-ink" @click="cancelEdit">Avbryt</button>
-                <button type="button" class="stamp-sm px-2 py-0.5 text-[10px] font-display uppercase bg-forest text-paper" @click="saveEdit(m)">Lagre</button>
+              <p v-if="editError" class="text-sovred text-[11px] mt-1">{{ editError }}</p>
+              <div class="flex items-center gap-2 mt-1 justify-end">
+                <span class="text-[10px] opacity-70 font-display">{{ editDraft.length }}/{{ MAX_LEN }}</span>
+                <button
+                  type="button"
+                  class="stamp-sm px-2 py-0.5 text-[10px] font-display uppercase bg-paper text-ink"
+                  @mousedown.prevent
+                  @click.stop="cancelEdit"
+                >Avbryt</button>
+                <button
+                  type="button"
+                  class="stamp-sm px-2 py-0.5 text-[10px] font-display uppercase bg-forest text-paper"
+                  :disabled="editSaving || !editDraft.trim()"
+                  @mousedown.prevent
+                  @click.stop="saveEdit(m)"
+                >{{ editSaving ? 'Lagrer…' : 'Lagre' }}</button>
               </div>
             </template>
 
-            <p v-else class="text-sm whitespace-pre-wrap leading-snug">
+            <div v-else class="chat-bubble-text text-sm whitespace-pre-wrap leading-snug">
               <template v-for="(part, i) in renderText(m.text)" :key="i">
                 <a
                   v-if="part.type === 'url'"
@@ -256,7 +282,7 @@ onUnmounted(() => {
                 >{{ part.value }}</a>
                 <template v-else>{{ part.value }}</template>
               </template>
-            </p>
+            </div>
           </div>
 
           <button
@@ -333,6 +359,7 @@ onUnmounted(() => {
         <textarea
           ref="textarea"
           v-model="draft"
+          :maxlength="MAX_LEN"
           rows="1"
           class="input flex-1 resize-none chat-textarea"
           placeholder="Melding til gutta…"
@@ -343,6 +370,7 @@ onUnmounted(() => {
         />
         <button class="btn-primary" :disabled="sending || !ready || !draft.trim()">Send</button>
       </div>
+      <p class="text-[10px] opacity-60 text-right font-display mt-1">{{ draft.length }}/{{ MAX_LEN }}</p>
     </form>
 
     <div
@@ -359,6 +387,10 @@ onUnmounted(() => {
   min-height: 2.5rem;
   overflow-y: auto;
   line-height: 1.3;
+}
+.chat-bubble-text {
+  max-height: calc(1.375em * 6);
+  overflow-y: auto;
 }
 .chat-link {
   color: #1d4ed8;
