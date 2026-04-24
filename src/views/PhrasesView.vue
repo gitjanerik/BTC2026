@@ -64,8 +64,10 @@ async function deleteRec(phraseId) {
   if (!confirm('Slette din innspilling?')) return;
   busy.value = true;
   busyMsg.value = 'Sletter…';
-  try { await remove(phraseId); }
-  catch (e) { lastError.value = e.message; }
+  try {
+    await remove(phraseId);
+    closeRecorder();
+  } catch (e) { lastError.value = e.message; }
   finally { busy.value = false; busyMsg.value = ''; }
 }
 
@@ -155,38 +157,30 @@ function otherRecs(phraseId) {
         </div>
 
         <div v-if="listFor(p.id).length" class="flex flex-wrap gap-1">
-          <template v-for="r in listFor(p.id)" :key="r.uid">
-            <button
-              type="button"
-              class="stamp-sm px-2 py-1 text-xs font-display flex items-center gap-1"
-              :class="r.uid === current?.uid ? 'bg-orange text-paper' : 'bg-paper'"
-              @click="playUserVoice(r.audioUrl)"
-            >
-              <span>▶</span>
-              <span class="uppercase">{{ r.byName }}</span>
-              <span v-if="playingUrl === r.audioUrl" class="opacity-70 text-[9px]">…</span>
-            </button>
-          </template>
           <button
-            v-if="myRec(p.id)"
+            v-for="r in listFor(p.id)"
+            :key="r.uid"
             type="button"
-            class="stamp-sm px-2 py-1 text-xs font-display uppercase bg-sovred text-paper flex items-center gap-1"
-            :aria-label="'Slett min innspilling'"
-            :disabled="busy"
-            @click="deleteRec(p.id)"
-          >🗑 Min</button>
+            class="stamp-sm px-2 py-1 text-xs font-display flex items-center gap-1"
+            :class="r.uid === current?.uid ? 'bg-orange text-paper' : 'bg-paper'"
+            @click="playUserVoice(r.audioUrl)"
+          >
+            <span>▶</span>
+            <span class="uppercase">{{ r.byName }}</span>
+            <span v-if="playingUrl === r.audioUrl" class="opacity-70 text-[9px]">…</span>
+          </button>
         </div>
 
         <div v-if="recordingFor === p.id" class="stamp bg-deep/50 p-2 space-y-2">
           <p class="text-[11px] stencil text-center">Spill inn: <span class="opacity-70">{{ p.ro }}</span></p>
 
-          <div v-if="!recorder.lastBlob.value" class="flex items-center gap-2 justify-center">
+          <div v-if="!recorder.lastBlob.value" class="flex flex-wrap items-center gap-2 justify-center">
             <button
               v-if="!recorder.recording.value"
               type="button"
               class="stamp-sm px-3 py-2 text-sm font-display uppercase bg-sovred text-paper"
               @click="startRec"
-            >● Start</button>
+            >● {{ myRec(p.id) ? 'Spill inn på nytt' : 'Start' }}</button>
             <template v-else>
               <button
                 type="button"
@@ -195,6 +189,13 @@ function otherRecs(phraseId) {
               >■ Stopp</button>
               <span class="text-xs font-display">{{ recorder.seconds.value }}s / {{ recorder.maxSeconds }}s</span>
             </template>
+            <button
+              v-if="!recorder.recording.value && myRec(p.id)"
+              type="button"
+              class="stamp-sm px-3 py-2 text-sm font-display uppercase bg-sovred text-paper"
+              :disabled="busy"
+              @click="deleteRec(p.id)"
+            >🗑 Slett min</button>
             <button
               v-if="!recorder.recording.value"
               type="button"
