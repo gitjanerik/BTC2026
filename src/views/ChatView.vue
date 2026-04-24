@@ -278,6 +278,21 @@ function scrollToBottomRobust() {
   });
   setTimeout(scrollToBottom, 120);
   setTimeout(scrollToBottom, 400);
+  setTimeout(scrollToBottom, 1200);
+}
+
+let mountObserver = null;
+let mountObserverTimer = null;
+
+function installMountScroller() {
+  if (!list.value) return;
+  // Any DOM mutation inside the list within the first ~3s re-triggers scroll,
+  // so slow Firestore loads / late font/image layout still end up at the bottom.
+  mountObserver = new MutationObserver(scrollToBottom);
+  mountObserver.observe(list.value, { childList: true, subtree: true });
+  mountObserverTimer = setTimeout(() => {
+    if (mountObserver) { mountObserver.disconnect(); mountObserver = null; }
+  }, 3000);
 }
 
 watch(messages, async () => {
@@ -299,12 +314,15 @@ watch(typingOthers, async () => {
 onMounted(async () => {
   await nextTick();
   scrollToBottomRobust();
+  installMountScroller();
   markChatSeen();
   autoGrow();
 });
 
 onUnmounted(() => {
   if (idleTimer) clearTimeout(idleTimer);
+  if (mountObserver) { mountObserver.disconnect(); mountObserver = null; }
+  if (mountObserverTimer) { clearTimeout(mountObserverTimer); mountObserverTimer = null; }
   markChatSeen();
 });
 </script>
