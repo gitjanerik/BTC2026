@@ -20,6 +20,8 @@ const chatMessages = ref([]);
 const bingoPhotos = ref([]);
 let initialized = false;
 
+export { chatMessages };
+
 function init() {
   if (initialized) return;
   initialized = true;

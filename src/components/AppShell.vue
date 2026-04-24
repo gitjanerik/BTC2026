@@ -1,11 +1,17 @@
 <script setup>
+import { onMounted } from 'vue';
 import BottomNav from './BottomNav.vue';
 import BroadcastToast from './BroadcastToast.vue';
 import { useAuth } from '../composables/useAuth.js';
 import { useRouter } from 'vue-router';
+import { startChatNotifications } from '../composables/useChatNotifications.js';
 
 const { current, logout } = useAuth();
 const router = useRouter();
+
+onMounted(() => {
+  startChatNotifications();
+});
 
 function handleLogout() {
   logout();

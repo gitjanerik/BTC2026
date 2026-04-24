@@ -1,20 +1,32 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { users } from '../data/users.js';
 import { useAuth } from '../composables/useAuth.js';
 import { useSettings } from '../composables/useSettings.js';
+import { useInstallPrompt } from '../composables/useInstallPrompt.js';
+import { requestChatNotificationPermission } from '../composables/useChatNotifications.js';
 
 const router = useRouter();
 const { login } = useAuth();
-const { fontScale, theme, setFontScale, setTheme } = useSettings();
+const { fontScale, theme, setFontScale, setTheme, welcomeSeen, markWelcomeSeen } = useSettings();
+const { canPrompt, isStandalone, isIOS, install } = useInstallPrompt();
 
 const selected = ref(null);
 const pin = ref('');
 const error = ref('');
 const loading = ref(false);
+const showWelcome = ref(false);
+const showIOSHelp = ref(false);
+const installStatus = ref('');
 
 const user = computed(() => users.find((u) => u.id === selected.value));
+
+onMounted(() => {
+  if (!welcomeSeen.value && !isStandalone.value) {
+    showWelcome.value = true;
+  }
+});
 
 async function submit() {
   if (!selected.value) { error.value = 'Velg navn først'; return; }
@@ -29,6 +41,33 @@ async function submit() {
   } finally {
     loading.value = false;
   }
+}
+
+async function installApp() {
+  installStatus.value = '';
+  if (isIOS.value && !canPrompt.value) {
+    showIOSHelp.value = true;
+    return;
+  }
+  const result = await install();
+  if (result === 'unavailable') {
+    showIOSHelp.value = true;
+  } else if (result === 'accepted') {
+    installStatus.value = 'Installert!';
+    await requestChatNotificationPermission();
+  }
+}
+
+async function acceptWelcome() {
+  markWelcomeSeen();
+  showWelcome.value = false;
+  await installApp();
+  await requestChatNotificationPermission();
+}
+
+function dismissWelcome() {
+  markWelcomeSeen();
+  showWelcome.value = false;
 }
 </script>
 
@@ -89,6 +128,24 @@ async function submit() {
           </p>
         </div>
 
+        <div v-if="!isStandalone" class="stamp p-4 mt-4 space-y-2 bg-paper">
+          <p class="text-xs stencil">Installer som app</p>
+          <p class="text-[11px] opacity-70 italic leading-tight">
+            Legg appen på hjemskjermen for raskere tilgang og varsel ved nye chat-meldinger.
+          </p>
+          <button
+            type="button"
+            class="btn-primary w-full"
+            @click="installApp"
+          >⤓ Installer</button>
+          <p v-if="installStatus" class="text-[11px] text-forest font-display uppercase text-center">{{ installStatus }}</p>
+          <p v-if="showIOSHelp" class="text-[11px] opacity-80 leading-tight mt-1">
+            På iPhone: trykk <strong>dele-knappen</strong>
+            <span aria-hidden="true">⎘</span>
+            nederst i Safari → <strong>"Legg til på hjem-skjerm"</strong>.
+          </p>
+        </div>
+
         <div class="stamp p-4 mt-4 space-y-3 bg-paper">
           <div>
             <p class="text-xs stencil mb-1">Alderstillegg</p>
@@ -126,5 +183,35 @@ async function submit() {
       </div>
     </div>
     <div class="stripe-top" />
+
+    <div
+      v-if="showWelcome"
+      class="fixed inset-0 z-40 bg-ink/80 flex items-center justify-center p-4"
+      @click.self="dismissWelcome"
+    >
+      <div class="stamp bg-paper p-5 max-w-sm w-full space-y-3">
+        <p class="ribbon text-[10px]">Ny funksjon</p>
+        <h2 class="stencil text-xl">Vil du installere som app?</h2>
+        <p class="text-sm leading-snug">
+          Da kan du motta varsel når noen skriver i chat-kanalen.
+          Du kan når som helst skru av pling og varsler inne i chatten.
+        </p>
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button
+            type="button"
+            class="stamp-sm px-2 py-2 text-sm font-display uppercase bg-paper"
+            @click="dismissWelcome"
+          >Hopp over</button>
+          <button
+            type="button"
+            class="stamp-sm px-2 py-2 text-sm font-display uppercase bg-orange text-paper"
+            @click="acceptWelcome"
+          >⤓ Installer</button>
+        </div>
+        <p v-if="showIOSHelp" class="text-[11px] opacity-80 leading-tight">
+          På iPhone: trykk <strong>dele-knappen</strong> nederst i Safari → <strong>"Legg til på hjem-skjerm"</strong>.
+        </p>
+      </div>
+    </div>
   </div>
 </template>

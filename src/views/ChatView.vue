@@ -3,6 +3,8 @@ import { ref, computed, nextTick, watch, onUnmounted, onMounted } from 'vue';
 import { useChat, MAX_LEN } from '../composables/useChat.js';
 import { useAuth } from '../composables/useAuth.js';
 import { useUnread } from '../composables/useUnread.js';
+import { useSettings } from '../composables/useSettings.js';
+import { requestChatNotificationPermission } from '../composables/useChatNotifications.js';
 
 const vAutoOverflow = {
   mounted(el) {
@@ -32,6 +34,31 @@ const {
 } = useChat();
 const { current } = useAuth();
 const { markChatSeen } = useUnread();
+const { chatSound, chatNotify, setChatSound, setChatNotify } = useSettings();
+const notifyPermission = ref(typeof Notification !== 'undefined' ? Notification.permission : 'unsupported');
+const notifyHelp = ref(false);
+
+async function toggleSound() {
+  setChatSound(!chatSound.value);
+}
+
+async function toggleNotify() {
+  notifyHelp.value = false;
+  if (chatNotify.value) {
+    setChatNotify(false);
+    return;
+  }
+  const res = await requestChatNotificationPermission();
+  notifyPermission.value = res;
+  if (res === 'granted') {
+    setChatNotify(true);
+  } else if (res === 'denied') {
+    notifyHelp.value = true;
+  } else {
+    // default / unsupported — user didn't choose
+    setChatNotify(false);
+  }
+}
 
 const draft = ref('');
 const list = ref(null);
@@ -303,6 +330,26 @@ onUnmounted(() => {
         <span class="ribbon text-[10px]">Kanalen</span>
       </p>
       <h2 class="stencil text-2xl text-center mt-1">Chat</h2>
+
+      <div class="absolute top-1/2 left-3 -translate-y-1/2 flex gap-1">
+        <button
+          type="button"
+          class="w-9 h-9 stamp-sm flex items-center justify-center text-base leading-none"
+          :class="chatSound ? 'bg-mustard' : 'bg-paper opacity-70'"
+          :aria-label="chatSound ? 'Slå av pling' : 'Slå på pling'"
+          :title="chatSound ? 'Pling er på' : 'Pling er av'"
+          @click="toggleSound"
+        >{{ chatSound ? '🔊' : '🔇' }}</button>
+        <button
+          type="button"
+          class="w-9 h-9 stamp-sm flex items-center justify-center text-base leading-none"
+          :class="chatNotify && notifyPermission === 'granted' ? 'bg-mustard' : 'bg-paper opacity-70'"
+          :aria-label="chatNotify ? 'Slå av varsler' : 'Slå på varsler'"
+          :title="chatNotify ? 'Varsler på' : 'Varsler av'"
+          @click="toggleNotify"
+        >{{ chatNotify && notifyPermission === 'granted' ? '🔔' : '🔕' }}</button>
+      </div>
+
       <button
         ref="downBtn"
         type="button"
@@ -310,6 +357,10 @@ onUnmounted(() => {
         :aria-label="'Rull til nyeste melding'"
         @click="scrollToNewest"
       >↓</button>
+
+      <p v-if="notifyHelp" class="text-[11px] text-sovred text-center mt-2 italic">
+        Varsler er blokkert. Tillat varsler for BTC2026 i nettleserinnstillingene.
+      </p>
     </div>
 
     <div ref="list" class="flex-1 overflow-y-auto px-3 pt-3 space-y-3">
