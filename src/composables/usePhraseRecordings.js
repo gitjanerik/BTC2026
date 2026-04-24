@@ -11,6 +11,8 @@ const all = ref({});
 const ready = ref(false);
 let initialized = false;
 
+export { all as phraseRecordings };
+
 function init() {
   if (initialized || !hasFirebaseConfig || !db) return;
   initialized = true;
