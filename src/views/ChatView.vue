@@ -504,7 +504,11 @@ onUnmounted(() => {
           @keydown="onKeydown"
           @blur="stopTyping"
         />
-        <button class="btn-primary" :disabled="sending || !ready || !draft.trim()">Send</button>
+        <button
+          class="btn-primary px-3 text-lg leading-none"
+          :disabled="sending || !ready || !draft.trim()"
+          :aria-label="'Send melding'"
+        >➤</button>
       </div>
       <p class="text-[10px] opacity-60 text-right font-display mt-1">{{ draft.length }}/{{ MAX_LEN }}</p>
     </form>
