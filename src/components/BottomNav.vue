@@ -8,11 +8,11 @@ const { unreadChat, unreadBingo } = useUnread();
 const tabs = computed(() => [
   { to: '/program',   label: 'Program', icon: '★' },
   { to: '/map',       label: 'Kart',    icon: '◎' },
+  { to: '/weather',   label: 'Vær',     icon: '☀' },
   { to: '/chat',      label: 'Chat',    icon: '✉', badge: unreadChat.value },
   { to: '/bingo',     label: 'Bingo',   icon: '▣', badge: unreadBingo.value },
   { to: '/phrases',   label: 'Fraser',  icon: '♪' },
   { to: '/currency',  label: 'Valuta',  icon: '¤' },
-  { to: '/weather',   label: 'Vær',     icon: '☀' },
   { to: '/casino',    label: 'Casino',  icon: '♠' },
   { to: '/nightlife', label: 'Natt',    icon: '☾' },
 ]);
