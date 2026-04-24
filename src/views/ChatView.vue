@@ -303,7 +303,7 @@ onUnmounted(() => {
       <h2 class="stencil text-2xl text-center mt-1">Chat</h2>
     </div>
 
-    <div ref="list" class="flex-1 overflow-y-auto px-3 pt-3 pb-16 space-y-3">
+    <div ref="list" class="flex-1 overflow-y-auto px-3 pt-3 pb-48 space-y-3">
       <p v-if="!ready" class="text-center text-sm opacity-60">Kobler til…</p>
       <p v-if="error" class="text-sovred text-sm text-center">{{ error }}</p>
       <p v-if="ready && messages.length === 0 && !error" class="text-center text-sm opacity-60">
