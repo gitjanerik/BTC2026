@@ -270,11 +270,26 @@ function scrollToBottom() {
   if (list.value) list.value.scrollTop = list.value.scrollHeight;
 }
 
+function scrollToBottomRobust() {
+  scrollToBottom();
+  requestAnimationFrame(() => {
+    scrollToBottom();
+    requestAnimationFrame(scrollToBottom);
+  });
+  setTimeout(scrollToBottom, 120);
+  setTimeout(scrollToBottom, 400);
+}
+
 watch(messages, async () => {
   await nextTick();
-  scrollToBottom();
+  scrollToBottomRobust();
   markChatSeen();
 }, { deep: true, flush: 'post' });
+
+watch(ready, async () => {
+  await nextTick();
+  scrollToBottomRobust();
+}, { flush: 'post' });
 
 watch(typingOthers, async () => {
   await nextTick();
@@ -283,7 +298,7 @@ watch(typingOthers, async () => {
 
 onMounted(async () => {
   await nextTick();
-  scrollToBottom();
+  scrollToBottomRobust();
   markChatSeen();
   autoGrow();
 });
