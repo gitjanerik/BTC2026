@@ -477,7 +477,7 @@ onUnmounted(() => {
     </div>
 
 
-    <form class="p-3 border-t-2 border-ink bg-paper" @submit.prevent="submit">
+    <form class="chat-compose p-3 border-t-2 border-ink bg-paper" @submit.prevent="submit">
       <div v-if="replyingTo" class="flex items-start gap-2 mb-2 stamp-sm bg-deep/60 px-2 py-1">
         <div class="flex-1 min-w-0">
           <p class="text-[9px] stencil opacity-80">Svarer til {{ replyingTo.senderName }}</p>
@@ -533,6 +533,14 @@ onUnmounted(() => {
 }
 .chat-quote {
   border-left: 3px solid #2a1810;
+}
+.chat-compose {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+}
+html[data-fontscale="3"] .chat-compose {
+  position: static;
 }
 .chat-bubble {
   -webkit-touch-callout: none;
