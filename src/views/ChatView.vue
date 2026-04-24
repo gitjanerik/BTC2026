@@ -35,7 +35,6 @@ const { markChatSeen } = useUnread();
 
 const draft = ref('');
 const list = ref(null);
-const endSentinel = ref(null);
 const textarea = ref(null);
 const sending = ref(false);
 const sendError = ref('');
@@ -268,11 +267,7 @@ async function doDelete(m) {
 }
 
 function scrollToBottom() {
-  if (endSentinel.value) {
-    endSentinel.value.scrollIntoView({ block: 'end', behavior: 'auto' });
-  } else if (list.value) {
-    list.value.scrollTop = list.value.scrollHeight;
-  }
+  if (list.value) list.value.scrollTop = list.value.scrollHeight;
 }
 
 watch(messages, async () => {
@@ -463,8 +458,6 @@ onUnmounted(() => {
           </span>
         </div>
       </div>
-
-      <div ref="endSentinel" aria-hidden="true" class="h-0" />
     </div>
 
     <form class="p-3 border-t-2 border-ink bg-paper" @submit.prevent="submit">
