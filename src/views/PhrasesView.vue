@@ -2,7 +2,7 @@
 import { phrases } from '../data/phrases.js';
 import { useTTS } from '../composables/useTTS.js';
 
-const { hasRoVoice, speak } = useTTS();
+const { hasRoVoice, speak, voicePref, setVoicePref, hasFemale, hasMale } = useTTS();
 </script>
 
 <template>
@@ -12,6 +12,29 @@ const { hasRoVoice, speak } = useTTS();
       <h2 class="stencil text-3xl mt-2">Fraser</h2>
       <p class="text-xs opacity-70 italic">
         {{ hasRoVoice ? 'Tap høyttaler for å høre' : 'Ingen rumensk stemme funnet på enheten — fonetikk vises uansett.' }}
+      </p>
+    </div>
+
+    <div v-if="hasRoVoice && (hasFemale || hasMale)" class="stamp bg-paper p-3">
+      <p class="text-xs stencil mb-2 text-center">Stemme</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          class="stamp-sm px-2 py-2 text-sm font-display uppercase"
+          :class="voicePref === 'female' ? 'bg-orange text-paper' : 'bg-paper'"
+          :disabled="!hasFemale"
+          @click="setVoicePref('female')"
+        >♀ Kvinne</button>
+        <button
+          type="button"
+          class="stamp-sm px-2 py-2 text-sm font-display uppercase"
+          :class="voicePref === 'male' ? 'bg-orange text-paper' : 'bg-paper'"
+          :disabled="!hasMale"
+          @click="setVoicePref('male')"
+        >♂ Mann</button>
+      </div>
+      <p v-if="!hasFemale || !hasMale" class="text-[10px] opacity-60 italic text-center mt-1">
+        Enheten har kun én rumensk stemme — valget ignoreres hvis kjønn ikke er tilgjengelig.
       </p>
     </div>
 
