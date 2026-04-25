@@ -41,7 +41,7 @@ async function init() {
         <div style="font-family:Georgia,serif;max-width:220px">
           <div style="font-weight:700;font-size:14px;margin-bottom:2px">🏠 ${guideHome.name}</div>
           <div style="font-size:12px;margin-bottom:4px">${guideHome.address}</div>
-          <div style="font-size:11px;color:#555">Kode ${guideHome.code} · leil. ${guideHome.apartment}</div>
+          <div style="font-size:11px;color:#555">Leil. ${guideHome.apartment}</div>
         </div>`);
       info.open({ map, anchor: home });
     });
