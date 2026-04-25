@@ -5,7 +5,7 @@ export const bingoItems = [
   { id: 5,  title: 'En Dacia',                        hint: 'Helst en gammel 1300/1310' },
   { id: 6,  title: 'Streifkatt',                      hint: 'Løskatt — Bucuresti har mange' },
   { id: 14, title: 'Rumensk øl',                      hint: 'Ursus, Ciuc, Timișoreana' },
-  { id: 7,  title: 'Dørkode REMOVED-panelet',           hint: 'Ved Tor Martins inngang' },
+  { id: 7,  title: 'Dørkode-panelet',                 hint: 'Ved Tor Martins inngang' },
   { id: 8,  title: 'Tunfisk-og-spinat-middagen',      hint: "Dokumenter Tor Martins klassiker" },
 
   // Lørdag — Old Town + Therme
